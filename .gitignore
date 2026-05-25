@@ -1,6 +1,12 @@
-*/data/
+# Data directories anywhere in the tree
+data/
+
+# Python cache anywhere
+__pycache__/
+
+# Chrome profiles anywhere
+.chrome_profile/
+
+# File types
 *.json
 *.html
-/__pycache__
-*/__pycache__/
-*/.chrome_profile/

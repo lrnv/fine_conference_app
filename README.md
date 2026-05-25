@@ -4,8 +4,8 @@ The Fine Conference App is a lightweight planner built to replace the clunky app
 
 <table>
   <tr>
-    <td align="center"><img src="pngs/desktop.png" height="280" alt="Desktop layout"></td>
-    <td align="center"><img src="pngs/mobile.png" height="280" alt="Mobile layout"></td>
+    <td align="center"><img src="docs/desktop.png" height="280" alt="Desktop layout"></td>
+    <td align="center"><img src="docs/mobile.png" height="280" alt="Mobile layout"></td>
   </tr>
   <tr>
     <td align="center">Desktop view</td>
@@ -55,9 +55,9 @@ Once those two exist and have produced a `conference_data.json`, the shared buil
 
 If your conference doesn't have a subdirectory yet, create one with two scripts: a downloader and a processor.
 
-**The downloader** (`fetch_program_<conf>.py`) is responsible for getting the conference's raw source material onto disk and saving it into the subdirectory's `data/` directory. This is the only part of the pipeline that touches the network. A downloader can use whatever approach fits your conference's source, or you can download program files manually. All that matters is that it ends with the required input files saved in `data/`.
+**The downloader** (`fetch_program_<conf>.py`) is responsible for getting the conference's raw source material onto disk and saving it into the subdirectory's `data/` directory. This is the only part of the pipeline that should touch the network. A downloader can use whatever approach fits your conference's source, or you can download program files yourself manually. All that matters is that it ends with the required input files saved in `data/`.
 
-**The processor** (`process_program_<conf>.py`) reads those raw files entirely offline and produces a single `conference_data.json` matching the schema documented at the top of `build_conference_app.py`. That schema is source-agnostic, so completely different conferences with completely different processors can emit the same shape and use the same builder.
+**The processor** (`process_program_<conf>.py`) reads those raw files entirely offline and produces a single `conference_data.json` matching the schema documented in [CONFERENCE_JSON.md](docs/CONFERENCE_JSON.md). That schema is source-agnostic, so completely different conferences with completely different processors can emit the same shape and use the same builder.
 
 Because the builder and the app itself are not conference-dependent, no changes to the shared scripts are needed once those two exist. The same `python make_app.py <conf>` command will then build your conference just like any other.
 
