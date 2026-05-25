@@ -28,7 +28,7 @@ Conference organizers often ship a large app that requires an install, an accoun
 
 ## Usage
 
-If your conference already has a subdirectory, building its app is a single command from the root directory — just name the subdirectory:
+If your conference already has a subdirectory in `scripts`, building its app is a single command from the `scripts` directory:
 
 ```
 python make_app.py <conference_name>
