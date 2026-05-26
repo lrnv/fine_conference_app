@@ -2899,6 +2899,15 @@ function rebuildSearchResults() {
   wrap.innerHTML = "";
   const raw = (state.searchQuery || "").trim();
 
+  if (raw.toUpperCase() === "DEBUG") {
+    const on = toggleDebugOverlay();
+    wrap.appendChild(el("p", { class: "empty" },
+      on ? "Debug overlay ON. It shows live viewport heights at the top-left. "
+         + "Type DEBUG again (or reload) to turn it off."
+         : "Debug overlay OFF."));
+    return;
+  }
+
   const nowParsed = parseNowOverride(raw);
   if (nowParsed !== null) {
     if (Number.isNaN(nowParsed)) {
@@ -4864,6 +4873,63 @@ window.addEventListener("resize", syncAppHeight);
 window.addEventListener("orientationchange", syncAppHeight);
 
 window.addEventListener("pageshow", syncAppHeight);
+
+let _dbgEl = null;
+let _dbgTick = null;
+function updateDebugOverlay() {
+  if (!_dbgEl) return;
+  const vv = window.visualViewport;
+  const body = document.body.getBoundingClientRect();
+  const tab = document.getElementById("tabbar");
+  const tabRect = tab ? tab.getBoundingClientRect() : null;
+  const appH = getComputedStyle(document.documentElement)
+                 .getPropertyValue("--app-h").trim() || "(unset)";
+  const innerH = window.innerHeight;
+  const tabBottom = tabRect ? Math.round(tabRect.bottom) : "n/a";
+
+  const visibleBottom = vv ? vv.height : innerH;
+  const gap = tabRect ? Math.round(visibleBottom - tabRect.bottom) : "n/a";
+  _dbgEl.textContent =
+    `visualViewport.h: ${vv ? Math.round(vv.height) : "n/a"}\n` +
+    `visualViewport.offsetTop: ${vv ? Math.round(vv.offsetTop) : "n/a"}\n` +
+    `window.innerHeight: ${innerH}\n` +
+    `documentElement.clientHeight: ${document.documentElement.clientHeight}\n` +
+    `body height: ${Math.round(body.height)}\n` +
+    `--app-h: ${appH}\n` +
+    `tabbar.bottom: ${tabBottom}\n` +
+    `GAP below tabbar: ${gap}\n` +
+    `wide: ${isWide()}`;
+}
+function toggleDebugOverlay() {
+  if (_dbgEl) {
+    _dbgEl.remove();
+    _dbgEl = null;
+    if (_dbgTick) { clearInterval(_dbgTick); _dbgTick = null; }
+    if (window.visualViewport) {
+      window.visualViewport.removeEventListener("resize", updateDebugOverlay);
+      window.visualViewport.removeEventListener("scroll", updateDebugOverlay);
+    }
+    window.removeEventListener("resize", updateDebugOverlay);
+    return false;
+  }
+  _dbgEl = document.createElement("pre");
+
+  _dbgEl.style.cssText =
+    "position:fixed;top:0;left:0;z-index:99999;margin:0;padding:6px 8px;" +
+    "font:11px/1.35 ui-monospace,Menlo,Consolas,monospace;white-space:pre;" +
+    "background:rgba(0,0,0,.82);color:#0f0;pointer-events:none;" +
+    "border-bottom-right-radius:8px;max-width:80vw;";
+  document.body.appendChild(_dbgEl);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", updateDebugOverlay);
+    window.visualViewport.addEventListener("scroll", updateDebugOverlay);
+  }
+  window.addEventListener("resize", updateDebugOverlay);
+
+  _dbgTick = setInterval(updateDebugOverlay, 250);
+  updateDebugOverlay();
+  return true;
+}
 
 let _wasWide = isWide();
 let _resizeTimer = null;
