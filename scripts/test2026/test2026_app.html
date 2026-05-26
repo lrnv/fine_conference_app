@@ -118,11 +118,12 @@ html, body {
   text-size-adjust: 100%;
 }
 body {
-  padding-top:    calc(var(--top-h) + var(--safe-top));
-  padding-bottom: calc(var(--bot-h) + var(--tab-h) + var(--safe-bottom));
-}
-body.has-indicator {
-  padding-top:  calc(var(--top-h) + var(--safe-top) + var(--ind-h));
+  
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 button {
   background: none; border: none; color: inherit;
@@ -130,7 +131,7 @@ button {
 }
 
 #topbar {
-  position: fixed; top: 0; left: 0; right: 0;
+  flex: 0 0 auto;
   height: calc(var(--top-h) + var(--safe-top));
   padding-top: var(--safe-top);
   background: rgb(246,246,244);
@@ -187,10 +188,13 @@ body[data-active-tab="me"] #back-btn[hidden] ~ #page-title {
 #content {
   position: relative;
   
-  padding: 8px calc(12px * var(--sp)) 24px;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
   
-  min-height: calc(100vh - var(--top-h) - var(--bot-h) - var(--tab-h));
-  min-height: calc(100dvh - var(--top-h) - var(--bot-h) - var(--tab-h));
+  padding: 8px calc(12px * var(--sp)) 24px;
 }
 
 #me-connectors,
@@ -760,9 +764,8 @@ body[data-active-view="session-detail"] .detail-head {
 .notes-textarea--tall { min-height: 104px; }
 
 #scroll-indicator {
-  position: fixed;
-  top: calc(var(--top-h) + var(--safe-top));
-  left: 0; right: 0;
+  
+  flex: 0 0 auto;
   height: var(--ind-h);
   display: none;
   align-items: center; justify-content: flex-start;
@@ -862,15 +865,16 @@ body.has-indicator #scroll-indicator { display: flex; }
   overflow-y: auto;
   z-index: 19;
   
-  transform: translateY(110%);
-  visibility: hidden;
-  transition: transform .22s ease, visibility 0s linear .22s;
+  display: none;
   padding: 8px 12px 12px;
 }
 #types-panel.open {
-  transform: translateY(0);
-  visibility: visible;
-  transition: transform .22s ease, visibility 0s linear 0s;
+  display: block;
+  animation: types-slide-up .22s ease;
+}
+@keyframes types-slide-up {
+  from { transform: translateY(110%); }
+  to   { transform: translateY(0); }
 }
 .types-row {
   display: flex; align-items: center; gap: 10px;
@@ -896,9 +900,7 @@ body.has-indicator #scroll-indicator { display: flex; }
 .types-row.off { opacity: .55; }
 
 #bottom-controls {
-  position: fixed;
-  bottom: calc(var(--tab-h) + var(--safe-bottom));
-  left: 0; right: 0;
+  flex: 0 0 auto;
   height: var(--bot-h);
   background: rgb(246,246,244);
   border-top: 1px solid var(--line);
@@ -925,7 +927,7 @@ body.has-indicator #scroll-indicator { display: flex; }
 }
 
 #tabbar {
-  position: fixed; bottom: 0; left: 0; right: 0;
+  flex: 0 0 auto;
   height: calc(var(--tab-h) + var(--safe-bottom));
   padding-bottom: var(--safe-bottom);
   background: var(--surface);
@@ -1036,6 +1038,16 @@ body.has-indicator #scroll-indicator { display: flex; }
 
 @media (min-width: 900px) and (orientation: landscape) {
   
+  #topbar {
+    position: fixed; top: 0; left: 0;
+  }
+  #scroll-indicator {
+    position: fixed; top: calc(var(--top-h) + var(--safe-top)); left: 0;
+  }
+  #tabbar {
+    position: fixed; bottom: 0; left: 0;
+  }
+
   #topbar,
   #scroll-indicator,
   #types-panel { right: var(--me-w); }
@@ -1048,6 +1060,8 @@ body.has-indicator #scroll-indicator { display: flex; }
   #tabbar .tab-btn[data-tab="me"] { display: none; }
 
   #bottom-controls {
+    position: fixed;
+    bottom: calc(var(--tab-h) + var(--safe-bottom));
     left: 0; right: 0;
     z-index: 26;
   }
@@ -1055,6 +1069,9 @@ body.has-indicator #scroll-indicator { display: flex; }
   body { padding-right: var(--me-w); }
 
   body {
+    
+    display: block;
+    height: auto;
     padding-top: 0;
     padding-bottom: 0;
     overflow: hidden;            
@@ -4636,19 +4653,12 @@ function snapshotScroll() {
 }
 
 function leftScrollTop() {
-  if (isWide()) {
-    const c = $("#content");
-    return c ? c.scrollTop : 0;
-  }
-  return window.scrollY;
+  const c = $("#content");
+  return c ? c.scrollTop : 0;
 }
 function setLeftScrollTop(y) {
-  if (isWide()) {
-    const c = $("#content");
-    if (c) c.scrollTop = y;
-  } else {
-    window.scrollTo(0, y);
-  }
+  const c = $("#content");
+  if (c) c.scrollTop = y;
 }
 
 function rerenderPreservingAnchor() {
