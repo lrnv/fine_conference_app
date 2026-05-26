@@ -1,6 +1,6 @@
 # The Fine Conference App
 
-The Fine Conference App is a lightweight planner built to replace the clunky apps large conferences foist on attendees. It's a single webpage, with nothing to install, no account, no notifications, and no splash screen. Your schedule lives in your browser, syncs across your devices with a code, and feels at home on both phone and desktop.
+The Fine Conference App is a lightweight planner built to replace the clunky apps conferences foist on attendees. It's a single webpage, with nothing to install, no account, no notifications, and no splash screen. Your schedule lives in your browser, syncs across your devices with a code, and feels at home on both phone and desktop. See it in action [here](https://htmlpreview.github.io/?https://github.com/burghoff/fine_conference_app/blob/main/scripts/test2026/test2026_app.html)!
 
 <table>
   <tr>
