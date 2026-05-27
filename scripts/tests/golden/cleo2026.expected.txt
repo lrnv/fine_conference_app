@@ -612,8 +612,8 @@ DEVCOM US Army Research Laboratory	ARL
 DEVCOM US Army Research Laboratory, Adelphi, MD, United States	ARL
 DEVCOM, Army Research Laboratory, Adelphi, MD, United States	ARL
 DIET, Sapienza University of Rome, Rome, Italy	Sapienza
-DPHY, ONERA, Université Paris-Saclay	U Paris-Saclay
-DPHY, ONERA, Université Paris-Saclay, Palaiseau, France	U Paris-Saclay
+DPHY, ONERA, Université Paris-Saclay	Paris-Saclay
+DPHY, ONERA, Université Paris-Saclay, Palaiseau, France	Paris-Saclay
 DRS Daylight Solutions	DRS Daylight Solutions
 DRS Daylight Solutions, San Diego, CA, United States	DRS Daylight Solutions
 DTU	DTU
@@ -914,7 +914,7 @@ Department of Physics, National Chung Cheng University, Chiayi, Taiwan	National 
 Department of Physics, North Carolina State University, Raleigh, NC, United States	NC State
 Department of Physics, Paderborn University, Paderborn, Germany	Paderborn
 Department of Physics, Pohang University of Science and Technology (POSTECH), Pohang, Gyeongsangbuk-do, Korea (the Republic of)	POSTECH
-Department of Physics, Politecnico di Milano, Milan, Italy	Politecnico di Milano
+Department of Physics, Politecnico di Milano, Milan, Italy	PoliMi
 Department of Physics, Sejong university, Daejeon, Korea (the Republic of)	Sejong University
 Department of Physics, Simon Fraser University, Burnaby, BC, Canada	SFU
 Department of Physics, Stevens Institute of Technology, Hoboken, NJ, United States	Stevens
@@ -980,10 +980,10 @@ Device Technology Labs., NTT, Inc.	NTT
 Device Technology Labs., NTT, Inc., Atsugi, Kanagawa, Japan	NTT
 Diamond Company	Diamond SA
 Diamond Company, Losone, Switzerland	Diamond SA
-Dipartimento di Elettronica, Informazione e Bioingegneria, Politecnico di Milano, Milano, Italy	Politecnico di Milano
+Dipartimento di Elettronica, Informazione e Bioingegneria, Politecnico di Milano, Milano, Italy	PoliMi
 Dipartimento di Fisica "A. Volta", Università di Pavia, Pavia, Italy	Pavia
 Dipartimento di Fisica "Alessandro Volta", Università di Pavia, Pavia, Italy	Pavia
-Dipartimento di Fisica, Politecnico di Milano, Milan, Milan, Italy	Politecnico di Milano
+Dipartimento di Fisica, Politecnico di Milano, Milan, Milan, Italy	PoliMi
 Dipartimento di Fisica, Università di Trento, Trento, Italy	University of Trento
 Dipartimento di Ingegneria Industriale e dell’Informazione, Università di Pavia, Pavia, Italy	Pavia
 Dipartimento di Ingegneria dell’Informazione, Università degli Studi di Padova, Padova, Italy	Padua
@@ -1063,7 +1063,7 @@ EPFL, Neuchatel, Neuchatel, Switzerland	EPFL
 EPFL, Neuchâtel, Switzerland	EPFL
 EPSRC Centre for Doctoral Training in Applied Photonics	EPSRC CDT Photonics
 EPSRC Centre for Doctoral Training in Applied Photonics, Edinburgh, United Kingdom	EPSRC CDT Photonics
-ETH	ETH
+ETH	ETH Zürich
 ETH Zurich	ETH Zürich
 ETH Zürich	ETH Zürich
 ETRI	ETRI
@@ -2723,8 +2723,8 @@ PINC Technologies Inc., Pasadena, CA, United States	PINC Technologies Inc.
 PKU	Peking U
 PKU, Beijing, BEIJING, China	Peking U
 PNTLab, Consorzio Nazionale Interuniversitario per le Telecomunicazioni, Pisa, Italy	CNIT Italy
-POLITECNICO DI MILANO	Politecnico di Milano
-POLITECNICO DI MILANO, Milan, Italy	Politecnico di Milano
+POLITECNICO DI MILANO	PoliMi
+POLITECNICO DI MILANO, Milan, Italy	PoliMi
 POSTECH	POSTECH
 POSTECH, Pohang, Korea (the Republic of)	POSTECH
 Pacific Northwest National Laboratory	PNNL
@@ -2866,7 +2866,7 @@ Physics, Duke University, Durham, NC, United States	Duke
 Physics, ETH Zurich, Zurich, Zurich, Switzerland	ETH Zürich
 Physics, ETH Zürich, Zurich, Zurich, Switzerland	ETH Zürich
 Physics, ETH Zürich, Zürich, Switzerland	ETH Zürich
-Physics, ETH, Zurich, Switzerland	ETH
+Physics, ETH, Zurich, Switzerland	ETH Zürich
 Physics, Florida international University, Miami, FL, United States	FIU
 Physics, Friedrich-Alexander University of Erlangen-Nuremberg, Erlangen, Germany	FAU
 Physics, Friedrich-Alexander Universität Erlangen-Nürnberg, Erlangen, Germany	FAU
@@ -2896,7 +2896,7 @@ Physics, Peking University, Beijing, Beijing, China	Peking U
 Physics, Photonics, and Optical Engineering, Bridgewater State University, Bridgewater, MA, United States	Bridgewater State
 Physics, Pohang University of Science and Technology (POSTECH), Pohang, Korea (the Republic of)	POSTECH
 Physics, Pohang University of Science and Technology (POSTECH), Pohang-si, Korea (the Republic of)	POSTECH
-Physics, Politecnico di Milano, Milano, Italy	Politecnico di Milano
+Physics, Politecnico di Milano, Milano, Italy	PoliMi
 Physics, Purdue University, West Lafayette, IN, United States	Purdue
 Physics, Queens College, CUNY, Flushing, NY, United States	CUNY
 Physics, Rutgers University-Newark, Newark, NJ, United States	Rutgers
@@ -2962,9 +2962,9 @@ Pohang University of Science and Technology (POSTECH)	POSTECH
 Pohang University of Science and Technology (POSTECH), Pohang, Korea (the Republic of)	POSTECH
 Polish Academy of Sciences	Polish Academy
 Polish Academy of Sciences, Warsaw, Poland	Warsaw
-Politecnico di Milano	Politecnico di Milano
-Politecnico di Milano, Milan, MI, Italy	Politecnico di Milano
-Politecnico di Milano, Milano, Italy	Politecnico di Milano
+Politecnico di Milano	PoliMi
+Politecnico di Milano, Milan, MI, Italy	PoliMi
+Politecnico di Milano, Milano, Italy	PoliMi
 Politecnico di Torino	PoliTo
 Politecnico di Torino, Torino, Torino, Italy	PoliTo
 Polytechnic University of Bari	Polytechnic University of Bari

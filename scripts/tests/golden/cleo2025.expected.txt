@@ -603,10 +603,10 @@ DEVCOM Army Research Laboratory-South	ARL
 DEVCOM Army Research Laboratory-South, Houston, TX, United States	ARL
 DEVCOM US Army Research Laboratory	ARL
 DEVCOM US Army Research Laboratory, Adelphi, MD, United States	ARL
-DOTA, ONERA, Université Paris-Saclay	U Paris-Saclay
-DOTA, ONERA, Université Paris-Saclay, Palaiseau, France	U Paris-Saclay
-DPHY, ONERA, Université Paris-Saclay	U Paris-Saclay
-DPHY, ONERA, Université Paris-Saclay, Palaiseau, France	U Paris-Saclay
+DOTA, ONERA, Université Paris-Saclay	Paris-Saclay
+DOTA, ONERA, Université Paris-Saclay, Palaiseau, France	Paris-Saclay
+DPHY, ONERA, Université Paris-Saclay	Paris-Saclay
+DPHY, ONERA, Université Paris-Saclay, Palaiseau, France	Paris-Saclay
 DPHY/SLM, ONERA - The French Aerospace Lab, Palaiseau, France	DPHY/SLM
 DRS Daylight Solutions	DRS Daylight Solutions
 DRS Daylight Solutions, San Diego, CA, United States	DRS Daylight Solutions
@@ -862,7 +862,7 @@ Department of Physics, KAIST, Daejeon, Korea (the Republic of)	KAIST
 Department of Physics, Keio University, Yokohama, Kanagawa, Japan	Keio
 Department of Physics, Korea University, Seoul, Korea (the Republic of)	Korea U
 Department of Physics, Ludwig Maximilian University of Munich, Garching, Germany	LMU Munich
-Department of Physics, Massachusetts Institue of Technology, Cambridge, MA, United States	Massachusetts Institue of Technology
+Department of Physics, Massachusetts Institue of Technology, Cambridge, MA, United States	MIT
 Department of Physics, Massachusetts Institute of Technology, Cambridge, MA, United States	MIT
 Department of Physics, National Central University, Jhongli, Taiwan	National Central University
 Department of Physics, National Cheng Kung University, Tainan 701401, Taiwan	NCKU
@@ -919,7 +919,7 @@ Department of Physics, University of Trento, Trento, TN, Italy	University of Tre
 Department of Physics, University of Washington, Seattle, WA, United States	UW Seattle
 Department of Physics, University of Zagreb, Zagreb, Croatia	Zagreb
 Department of Physics, Universität Hamburg, Hamburg, Germany	Universitat Hamburg
-Department of Physics, Uniwersity of Warsaw, Warsaw, Poland	Warsaw
+Department of Physics, Uniwersity of Warsaw, Warsaw, Poland	Warsaw U
 Department of Physics, Vilnius Gediminas Technical University, Vilnius, Lithuania	Vilnius
 Department of Physics, Worcester Polytechnic Institute, Worcester, MA, United States	Worcester Polytechnic Institute
 Department of Physics, Yale University, New Haven, CT, United States	Yale
@@ -952,7 +952,7 @@ Diamond Light Source, Didcot, Oxfordshire, United Kingdom	Diamond Light Source
 Digital Optics Technologies	Digital Optics Technologies
 Digital Optics Technologies, Rolling Meadows, IL, United States	Digital Optics Technologies
 Dipartimento di Fisica e Astronomia “G. Galilei” & Padua Quantum Technologies Research Center, Universit`a degli Studi di Padova, Padova, Italy	Universit`a degli Studi di Padova
-Dipartimento di Fisica, Politecnico di Milano, Milano, Milano, Italy	Politecnico di Milano
+Dipartimento di Fisica, Politecnico di Milano, Milano, Milano, Italy	PoliMi
 Dipartimento di Fisica, Università di Pavia, Pavia, Italy	Pavia
 Dipartimento di Fisica, Università di Pavia, Pavia, Pavia, Italy	Pavia
 Dipartimento di Ingegneria Industriale e dell’Informazione, Università di Pavia, Pavia, Italy	Pavia
@@ -1022,12 +1022,12 @@ EPFL, Chavannes-près-Renens, Switzerland	EPFL
 EPFL, Lausanne, Switzerland	EPFL
 EPSRC Centre for Doctoral Training in Applied Photonics	EPSRC CDT Photonics
 EPSRC Centre for Doctoral Training in Applied Photonics, Edinburgh, United Kingdom	EPSRC CDT Photonics
-ETH	ETH
+ETH	ETH Zürich
 ETH Zurich	ETH Zürich
 ETH Zurich, Zurich, Switzerland	ETH Zürich
 ETH Zurich, Zürich, Switzerland	ETH Zürich
 ETH Zürich	ETH Zürich
-ETH, Zurich, Switzerland	ETH
+ETH, Zurich, Switzerland	ETH Zürich
 ETRI	ETRI
 ETRI, Daejeon, Korea (the Republic of)	ETRI
 EXPEC ARC, Saudi Aramco, Jeddah, Saudi Arabia	EXPEC ARC
@@ -1205,8 +1205,8 @@ Engineering Physics, Polytechnique Montréal, Montréal, QC, Canada	Polytechniqu
 Engineering Science, University of Oxford, Oxford, United Kingdom	Oxford
 Engineering, Brown University, Providence, RI, United States	Brown
 Engineering, LIGENTEC SA, St.-Sulpice, Switzerland	Ligentec
-Enrico Fermi Reasearch Center	Enrico Fermi Reasearch Center
-Enrico Fermi Reasearch Center, Rome, Italy, Italy	Enrico Fermi Reasearch Center
+Enrico Fermi Reasearch Center	Enrico Fermi Research Center (CREF)
+Enrico Fermi Reasearch Center, Rome, Italy, Italy	Enrico Fermi Research Center (CREF)
 Ephos, Inc.	Ephos
 Ephos, Inc., San Francisco, CA, United States	Cisco
 Erik Jonsson School of Engineering and Computer Science, The University of Texas at Dallas, Richardson, TX, United States	UT Dallas
@@ -1348,8 +1348,8 @@ Geological Survey of Canada – Pacific, Natural Resources Canada, Sidney, BC, C
 Geological Survey of Canada, Natural Resources Canada, Ottawa, ON, Canada	Geological Survey of Canada
 Georgia Institute of Technology	Georgia Tech
 Georgia Institute of Technology, Atlanta, GA, United States	Georgia Tech
-Georgia Institute of Thechnology	Georgia Institute of Thechnology
-Georgia Institute of Thechnology, Atlanta, GA, United States	Georgia Institute of Thechnology
+Georgia Institute of Thechnology	Georgia Tech
+Georgia Institute of Thechnology, Atlanta, GA, United States	Georgia Tech
 Ghent University	Ghent
 Ghent University - imec	imec
 Ghent University - imec, Gent, Belgium	imec
@@ -1658,8 +1658,8 @@ Institut des Nanotechnologies de Lyon (INL, CNRS), Ecully, France	CNRS
 Institut des Nanotechnologies de Lyon, Ecully, France	Institut des Nanotechnologies de Lyon
 Institut des nanotechnologies de Lyon	Institut des nanotechnologies de Lyon
 Institut des nanotechnologies de Lyon, Lyon, France	Institut des nanotechnologies de Lyon
-Institut fur Physik, Humboldt-Universitaet zu Berlin	Institut fur Physik
-Institut fur Physik, Humboldt-Universitaet zu Berlin, Berlin, Germany	Institut fur Physik
+Institut fur Physik, Humboldt-Universitaet zu Berlin	Humboldt
+Institut fur Physik, Humboldt-Universitaet zu Berlin, Berlin, Germany	Humboldt
 Institut fur Quantenoptik, Ulm University	Institut fur Quantenoptik
 Institut fur Quantenoptik, Ulm University, Ulm, Germany	Institut fur Quantenoptik
 Institut für Festkörperphysik, Technische Universität Berlin, Berlin, Germany	TU Berlin
@@ -2167,7 +2167,7 @@ Maritime Port Authority of Singapore, Singapore, Singapore, Singapore	Maritime P
 Massachusetts General Hospital	Massachusetts General Hospital
 Massachusetts General Hospital, Boston, MA, United States	Massachusetts General Hospital
 Massachusetts Inst of Tech Lincoln Lab	MIT Lincoln Lab
-Massachusetts Institue of Technology	Massachusetts Institue of Technology
+Massachusetts Institue of Technology	MIT
 Massachusetts Institute of Technology	MIT
 Massachusetts Institute of Technology (MIT)	MIT
 Massachusetts Institute of Technology (MIT), Cambridge, MA, United States	MIT
@@ -2442,8 +2442,8 @@ National Inst of Information & Comm Tech	NICT
 National Inst of Information & Comm Tech, Tokyo, TOKYO, Japan	NICT
 National Inst of Standards & Technology	NIST
 National Inst of Standards & Technology, Montgomery Village, MD, United States	NIST
-National Institite of Information and Communications Technology	National Institite of Information and Communications Technology
-National Institite of Information and Communications Technology, Tokyo, Japan	National Institite of Information and Communications Technology
+National Institite of Information and Communications Technology	NICT
+National Institite of Information and Communications Technology, Tokyo, Japan	NICT
 National Institue for Materials Science	National Institue for Materials Science
 National Institue for Materials Science, Tsukuba, Japan	National Institue for Materials Science
 National Institute for Materials Science	National Institute for Materials Science
@@ -2784,8 +2784,8 @@ Physics, Missouri S&T University, Rolla, MO, United States	Missouri S&T Universi
 Physics, National Chung Cheng University, Chaiyi, Taiwan	National Chung Cheng University
 Physics, National Tsing Hua University, Hsinchu, Taiwan	NTHU
 Physics, National University of Singapore, Singapore, Singapore	NUS
-Physics, Politecnico di Milano, Milan, Italy	Politecnico di Milano
-Physics, Politecnico di Milano, Milano, Lombardia, Italy	Politecnico di Milano
+Physics, Politecnico di Milano, Milan, Italy	PoliMi
+Physics, Politecnico di Milano, Milano, Lombardia, Italy	PoliMi
 Physics, Purdue University, West Lafayette, IN, United States	Purdue
 Physics, Queens College CUNY, Flushing, NY, United States	CUNY
 Physics, RPTU University Kaiserslautern-Landau, Kaiserslautern, Germany	RPTU University Kaiserslautern-Landau
@@ -2852,11 +2852,11 @@ Pitaevskii BEC Center, INO-CNR and Dipartimento di Fisica, Universita di Trento,
 Platform Photonics Research Center, National Institute of Advanced Industrial Science and Technology (AIST), Tsukuba, Ibaraki, Japan	AIST Japan
 Platform Photonics Research Center, The National Institute of Advanced Industrial Science and Technology, Ibaraki, Japan	AIST Japan
 Pohang University of Science and Technology	POSTECH
-Politecnico Di Milano	Politecnico di Milano
-Politecnico Di Milano, Como, Italy	Politecnico di Milano
-Politecnico di Milano	Politecnico di Milano
-Politecnico di Milano, Milan, Italy	Politecnico di Milano
-Politecnico di Milano, Milano, Italy	Politecnico di Milano
+Politecnico Di Milano	PoliMi
+Politecnico Di Milano, Como, Italy	PoliMi
+Politecnico di Milano	PoliMi
+Politecnico di Milano, Milan, Italy	PoliMi
+Politecnico di Milano, Milano, Italy	PoliMi
 Politecnico di Torino	PoliTo
 Politecnico di Torino, Torino, Italy	PoliTo
 Polymer Science and Engineering, University of Massachusetts, Amherst, MA, United States	UMass Amherst
@@ -2919,7 +2919,7 @@ Quantum ICT Research Institute, Tamagawa University, Machida, Tokyo, Japan	Tamag
 Quantum Information Science Section, Computational Sciences and Engineering Division, Oak Ridge National Laboratory, Oak Ridge, TN, United States	Oak Ridge
 Quantum Information Science Section, Oak Ridge National Laboratory, Oak Ridge, TN, United States	Oak Ridge
 Quantum Labs, Cisco, Santa Monica, CA, United States	Cisco
-Quantum Optoelectronics Group, ETH, Zürich, Switzerland	ETH
+Quantum Optoelectronics Group, ETH, Zürich, Switzerland	ETH Zürich
 Quantum Research Institute (QRI)	QRI
 Quantum Research Institute (QRI), Ann Arbor, MI, United States	Quantum Research Institute (QRI)
 Quantum Science Center (QSC)	Oak Ridge
@@ -4070,9 +4070,9 @@ Université Libre de Bruxelles	ULB
 Université Paris Cité	U Paris Cité
 Université Paris Saclay	Université Paris Saclay
 Université Paris Saclay, Palaiseau, France	Université Paris Saclay
-Université Paris-Saclay	U Paris-Saclay
+Université Paris-Saclay	Paris-Saclay
 Université Paris-Saclay, Institut d’Optique Graduate School, CNRS, Laboratoire Charles Fabry	Institut d'Optique
-Université Paris-Saclay, Palaiseau, France	U Paris-Saclay
+Université Paris-Saclay, Palaiseau, France	Paris-Saclay
 Université de Bourgogne	Bourgogne
 Université de Caen	Universite de Caen
 Université de Caen, Caen, France	Universite de Caen
@@ -4089,7 +4089,7 @@ Universiy of Bath	Bath
 Universiy of Bath, Bath, United Kingdom	Bath
 Universty of Maryland	Maryland
 Universty of Maryland, College Park, MD, United States	Maryland
-Uniwersity of Warsaw	Uniwersity of Warsaw
+Uniwersity of Warsaw	Warsaw U
 Unviersity of Notre Dame	Notre Dame
 Uviquity	Uviquity
 Uviquity, Raleigh, NC, United States	Uviquity

@@ -12,10 +12,10 @@ LIGENTEC SA	Ligentec
 Lightium AG	Lightium AG
 Luceda Photonics	Luceda Photonics
 Luxtelligence SA	Luxtelligence SA
-Marvell Technologies (formerly Polariton Technologies AG)	Marvell Technologies (formerly Polariton Technologies AG)
+Marvell Technologies (formerly Polariton Technologies AG)	Marvell
 Menhir Photonics AG	Menhir Photonics
 Point Cloud	Point Cloud
-Politechnico di Milano	Politechnico di Milano
+Politechnico di Milano	PoliMi
 QuEra	QuEra
 UCLA	UCLA
 Vario-Optics AG	Vario-Optics

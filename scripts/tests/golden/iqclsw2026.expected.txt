@@ -13,12 +13,12 @@ Center for Micro-and Nanostructures, TU Wien (Austria)	TU Vienna
 Center of Materials Science and Optoelectronics Engineering, University of Chinese Academy of Sciences (China)	UCAS
 Center of nanosciences and nanotechnologies, CNRS, Univ. Paris Saclay (France)	CNRS
 Centre de Nanosciences et de Nanotechnologies, CNRS, Univ. Paris Saclay (France)	CNRS
-Centre de Nanosciences et de Nanotechnologies, Université Paris-Saclay, CNRS (France)	U Paris-Saclay
+Centre de Nanosciences et de Nanotechnologies, Université Paris-Saclay, CNRS (France)	Paris-Saclay
 Centre d’Optique Photonique et Lasers, Université Laval (Canada)	Laval
 Centre for Micro- and Nanostructures, TU Wien, (Austria)	TU Vienna
 Centre for OptoElectronics and Biophotonics, School of Electrical and Electronic Engineering & The Photonics Institute, Nanyang Technological University (Singapore)	NTU Singapore
 Currently with Trumpf Photonics Inc. (USA)	Trumpf
-DOTA, ONERA, Université Paris-Saclay (France)	U Paris-Saclay
+DOTA, ONERA, Université Paris-Saclay (France)	Paris-Saclay
 De Vinci Higher Education (France)	De Vinci
 Department of Electrical Engineering and Information Technology, TU Darmstadt (Germany)	TU Darmstadt
 Department of Electrical Engineering, Technion-Israel Institute of Technology (Israel) : 3. Univ. Grenoble-Alpes, CEA, INAC, PHELIQS (France)	CEA
@@ -32,7 +32,7 @@ Department of Materials Science and Engineering, University of Delaware (USA)	De
 Department of Physics, Humboldt University (Germany)	Humboldt
 Department of Physics, Konstanz University (Germany)	Konstanz
 Dipartimento di Fisica “E. Fermi”, Università di Pisa (Italy)	U Pisa
-Dipartimento di Fisica, Politecnico di Milano (Italy)	Politecnico di Milano
+Dipartimento di Fisica, Politecnico di Milano (Italy)	PoliMi
 Dipartimento di Fisica, Universitá di Pisa (Italy)	U Pisa
 Dipartimento di Scienze, Università degli Studi Roma (Italy)	Roma Tre
 ETH Zurich (Switzerland)	ETH Zürich
@@ -76,10 +76,10 @@ Istituto Nanoscienze-CNR and Scuola Normale Superiore (NEST) (Italy)	NEST
 Istituto Nazionale di Ottica – CNR-INO (Italy)	CNR-INO
 John A. Paulson School of Engineering and Applied Sciences, Harvard University (USA)	Harvard
 Johns Hopkins University (USA)	Johns Hopkins
-L-NESS laboratory, Physics Department, Politecnico di Milano (Italy)	Politecnico di Milano
-L-NESS, Politecnico di Milano, Dipartimento di Fisica (Italy)	Politecnico di Milano
+L-NESS laboratory, Physics Department, Politecnico di Milano (Italy)	PoliMi
+L-NESS, Politecnico di Milano, Dipartimento di Fisica (Italy)	PoliMi
 LTCI Télécom Paris, Institut Polytechnique de Paris (France)	IP Paris
-Laboratoire Albert Fert, CNRS, Thales Université Paris-Saclay (France)	U Paris-Saclay
+Laboratoire Albert Fert, CNRS, Thales Université Paris-Saclay (France)	Paris-Saclay
 Laboratoire Pierre Aigrain, Univ. Pierre et Marie Curie – Paris 6, Univ. Paris Diderot – Paris 7, ENS Paris- France	ENS Paris
 Laboratoire de Chimie de la Matière Condensée de Paris, Sorbonne Université (France)	Sorbonne
 Laboratoire de Physique de l’ENS, Université Paris Cité, Ecole normale supérieure, Université PSL, Sorbonne Université, CNRS (France)	ENS Paris
@@ -134,7 +134,7 @@ Technische Universität München, Walter Schottky Institut	TU Munich
 Technische Universität Wien (Austria)	TU Vienna
 Thales Research and Technology (France)	Thales
 Thorlabs Quantum Electronics (USA)	Thorlabs
-Unité Mixte de Physique, CNRS, Thales, Université Paris‐Saclay (France)	U Paris-Saclay
+Unité Mixte de Physique, CNRS, Thales, Université Paris‐Saclay (France)	Paris-Saclay
 Univ. Grenoble Alpes, CEA, CNRS Grenoble INP, IRIG-SPINTEC (France)	Grenoble Alpes
 Univ. Grenoble Alpes, CEA, IRIG-MEM (France)	Grenoble Alpes
 University College London, Electronic and Electrical Engineering (UK)	UCL
@@ -148,7 +148,7 @@ University of Würzburg, Physikalisches Institut, Lehrstuhl für Technische Phys
 Università Roma Tre, Department of Sciences (Italy)	Roma Tre
 Università di Pisa, Department of Physics (Italy)	U Pisa
 Université Laval – Canada & Télécom Paris – France	Laval
-Université Paris-Saclay, CNRS, Centre de Nanosciences et de Nanotechnologies (France)	U Paris-Saclay
+Université Paris-Saclay, CNRS, Centre de Nanosciences et de Nanotechnologies (France)	Paris-Saclay
 Vigo Photonics SA (Poland)	Vigo Photonics
 Walter Schottky Institute, Technical University of Munich (Germany)	TU Munich
 Wroclaw Universityof Science & Technology (Poland)	Wroclaw
