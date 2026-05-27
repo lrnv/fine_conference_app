@@ -30,11 +30,15 @@ conference SUBDIRECTORY (or several) named on the command line:
     python make_app.py cleo2026
     python make_app.py cleo2025
     python make_app.py cleo2026 cleo2025    # build several, in order
+    python make_app.py all                  # build every conference found
 
 When more than one subdirectory is given, the full build runs once per
-subdirectory in the order listed. A failure in one conference is reported but
-does not stop the others; the run ends with a summary and a non-zero exit code
-if any conference failed.
+subdirectory in the order listed. The special argument 'all' (case-insensitive,
+and used on its own) expands to every valid conference subdirectory under the
+root, in sorted order — a subdirectory counts as a conference when it contains
+both a fetch*.py downloader and a process*.py processor. A failure in one
+conference is reported but does not stop the others; the run ends with a summary
+and a non-zero exit code if any conference failed.
 
 Each conference subdirectory is expected to contain:
   - exactly one downloader script whose name starts with "fetch"  (e.g.
@@ -173,7 +177,9 @@ def _parse_args() -> tuple[list[str], bool, bool]:
     """Return (subdir_names, force_download, force_process). Exits with usage on error.
 
     One or more conference subdirectories may be named; they are built in the
-    order given (see main(), which loops over them)."""
+    order given (see main(), which loops over them). The special argument 'all'
+    (case-insensitive) selects every valid conference subdirectory under ROOT
+    and must be the only positional given."""
     argv = sys.argv[1:]
     positionals = [a for a in argv if not a.startswith("-")]
     flags = [a for a in argv if a.startswith("-")]
@@ -201,7 +207,24 @@ def _parse_args() -> tuple[list[str], bool, bool]:
         _die("expected at least one conference subdirectory argument, e.g.\n"
              "    python make_app.py cleo2026\n"
              "    python make_app.py cleo2026 cleo2025\n"
+             "    python make_app.py all\n"
              f"(got {positionals!r}).")
+
+    # 'all' (case-insensitive) is a special selector for every valid conference
+    # subdirectory under ROOT. It must be used on its own, not mixed with names.
+    if any(p.lower() == "all" for p in positionals):
+        if len(positionals) > 1:
+            _die("'all' selects every conference and cannot be combined with "
+                 f"other subdirectory names (got {positionals!r}).")
+        names = _discover_conferences()
+        if not names:
+            _die(f"'all' was requested but no valid conference subdirectories "
+                 f"(each needing a fetch*.py and a process*.py) were found "
+                 f"under {ROOT}.")
+        print(f"[make] 'all' matched {len(names)} conference(s): "
+              f"{', '.join(names)}", flush=True)
+        return names, force, force_proc
+
     return positionals, force, force_proc
 
 
@@ -217,6 +240,33 @@ def _find_one(subdir: Path, prefix: str, what: str) -> Path:
         print(f"[make] WARNING: multiple {what} scripts found "
               f"({[m.name for m in matches]}); using {matches[0].name}.")
     return matches[0]
+
+
+def _is_valid_conference(subdir: Path) -> bool:
+    """A subdirectory is a buildable conference if it contains at least one
+    fetch*.py (downloader) AND at least one process*.py (processor). This is the
+    same pair _build_one() requires via _find_one(); we check it cheaply here so
+    'all' can skip directories that aren't conferences (data/, build artifacts,
+    .git, venvs, etc.) without aborting the run."""
+    if not subdir.is_dir():
+        return False
+    has_fetch = any(p.is_file() for p in subdir.glob("fetch*.py"))
+    has_process = any(p.is_file() for p in subdir.glob("process*.py"))
+    return has_fetch and has_process
+
+
+def _discover_conferences() -> list[str]:
+    """Return the names of all valid conference subdirectories under ROOT, sorted.
+
+    A subdirectory qualifies when _is_valid_conference() is true (it has both a
+    fetch*.py and a process*.py). Hidden directories (names starting with '.')
+    are skipped. This backs the 'all' command-line argument."""
+    names = sorted(
+        p.name for p in ROOT.iterdir()
+        if p.is_dir() and not p.name.startswith(".")
+        and _is_valid_conference(p)
+    )
+    return names
 
 
 # -----------------------------------------------------------------------------
