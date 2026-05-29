@@ -2153,10 +2153,9 @@ function subtitleFor(item) {
   const names = presiderRaw.split(/;| and /i)
     .map(n => n.trim()).filter(Boolean);
 
-  const affHit = affilSearch != null &&
-    (item.presider_aff_short || "").split(/[;/|]+/)
-      .some(s => _norm(s) === affilSearch);
-  const nameHTML = (nm) => {
+  const nameHTML = (nm, aff) => {
+    const affHit = affilSearch != null && aff &&
+      _norm(aff) === affilSearch;
     const hit = affHit ||
       (qName && personNamesMatch(qName, parsePersonName(nm)));
     return hit ? `<span class="author-hit">${esc(nm)}</span>` : esc(nm);
@@ -2167,12 +2166,12 @@ function subtitleFor(item) {
 
     s = names.map((nm, idx) => {
       const a = (affList[idx] || "").trim();
-      return a ? `${nameHTML(nm)} · ${esc(a)}` : nameHTML(nm);
+      return a ? `${nameHTML(nm, a)} · ${esc(a)}` : nameHTML(nm, a);
     }).join(", ");
   } else {
     
-    s = nameHTML(names[0] || presiderRaw);
     const a = (affDeduped || (affList[0] || "")).trim();
+    s = nameHTML(names[0] || presiderRaw, a);
     if (a) s += ` · ${esc(a)}`;
   }
   return s || "&nbsp;";
