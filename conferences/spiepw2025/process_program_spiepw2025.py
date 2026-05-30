@@ -91,11 +91,9 @@ OUTPUT_JSON = SCRIPT_DIR / "conference_data.json"
 # The single obvious top-level constant the curator may want to review/edit.
 CONFERENCE_NAME = "Photonics West 2025"
 
-CURATOR = {
-    "name": "David Burghoff",
-    "affiliation": "UT Austin",
-    "link": "https://photonics.utexas.edu/",
-}
+# Optional curator credit shown at the bottom of the app's About section.
+# Set to a {"name", "affiliation"?, "link"?} dict to show one; None omits it.
+CURATOR = None
 
 # ---------------------------------------------------------------- color palette
 # id == color token == Types-panel filter id. RGB per scripts/AGENTS.md.
@@ -1007,15 +1005,17 @@ def run(pdf_path: Path) -> dict:
         return len(re.sub(r"[^A-Za-z]", "", core)) >= 2
 
     aff_sources = sorted(s for s in p.aff_sources if _meaningful(s))
-    return {
+    out = {
         "conference_name": CONFERENCE_NAME,
-        "curator": CURATOR,
         "session_types": _with_rgb(SESSION_TYPES),
         "talk_types": _with_rgb(TALK_TYPES),
         "sessions": sessions,
         "talks": talks,
         "affiliation_sources": aff_sources,
     }
+    if CURATOR and (CURATOR.get("name") or "").strip():
+        out["curator"] = CURATOR
+    return out
 
 
 def main() -> None:

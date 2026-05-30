@@ -1899,18 +1899,33 @@ button {
 @media (prefers-color-scheme: dark) {
   #topbar { background: rgb(17,17,17); }
 }
+/* All five top-bar children are explicitly pinned to row 1. Back and the left
+   slot share column 1 (mutually exclusive); the clock and the right extras share
+   column 3. Without the explicit grid-row, two items targeting the same column
+   with auto rows get pushed onto separate implicit rows — which silently grew
+   the bar to two rows and dropped the title below its center. */
 #back-btn {
   height: var(--top-h); padding: 0 14px;
   font-size: calc(17px * var(--fs)); color: var(--accent);
   display: flex; align-items: center; gap: 2px;
+  grid-column: 1; grid-row: 1;
   justify-self: start;
 }
 #back-btn[hidden] { display: none; }
+/* Left-side top-bar slot, sharing column 1 with the (mutually exclusive) Back
+   button. Holds the Sessions list's Expand-/Collapse-all control, which used to
+   live on the right (see renderTopbarExtras). Empty on every other view. */
+#topbar-left {
+  grid-column: 1; grid-row: 1;
+  justify-self: start;
+  display: flex; align-items: center;
+  padding-left: 8px;
+}
 #page-title {
   margin: 0; padding: 0 8px;
   font-size: calc(16px * var(--fs)); font-weight: 600; letter-spacing: .01em;
   text-align: center;
-  grid-column: 2;
+  grid-column: 2; grid-row: 1;
 }
 /* Only the Me tab's top-level title ("My Schedule") is left-justified; the
    other tabs (Sessions / Talks / Search) keep their centered titles. The
@@ -1921,7 +1936,28 @@ body[data-active-tab="me"] #back-btn[hidden] ~ #page-title {
   text-align: left;
   padding-left: 14px;
 }
+/* Green "pinned clock" readout shown next to the page title whenever a NOW /
+   FAST testing directive has overridden the app's notion of "now" (see
+   updateNowClock). Sits at the inner edge of the right grid track so it reads
+   as sitting just to the right of the centered title; the true-centered title
+   itself is left untouched. Hidden (and empty) under the real wall clock. */
+#now-clock {
+  grid-column: 3; grid-row: 1;
+  justify-self: start;
+  align-self: center;
+  padding-left: 10px;
+  font-size: calc(13px * var(--fs));
+  font-weight: 600;
+  color: #15a34a;
+  white-space: nowrap;
+  pointer-events: none;
+}
+#now-clock[hidden] { display: none; }
+@media (prefers-color-scheme: dark) {
+  #now-clock { color: #4ade80; }
+}
 #topbar-extra {
+  grid-column: 3; grid-row: 1;
   display: flex; align-items: center;
   padding-right: 8px;
   justify-self: end;
@@ -2023,7 +2059,7 @@ body[data-active-tab="me"] #back-btn[hidden] ~ #page-title {
   margin: 4px 2px 2px;
   font-size: calc(11px * var(--fs)); font-weight: 600;
   color: var(--muted);
-  display: flex; align-items: baseline; gap: 8px;
+  display: flex; align-items: baseline; gap: 6px;
 }
 .time-header::after {
   content: ""; flex: 1; height: 1px; background: var(--line);
@@ -2037,6 +2073,30 @@ body[data-active-tab="me"] #back-btn[hidden] ~ #page-title {
 .time-header .th-text {
   border-radius: 4px;
   padding: 0;
+}
+/* Per-time-header expand/collapse control (Sessions list only): a compact
+   sibling of the time label that opens or closes just the sessions competing at
+   that time. Smaller than the top bar's Expand/Collapse-all icon, and sits
+   between the time text and the header's trailing rule. position/z-index lift it
+   above the connector-overlay SVG (which paints over static content). */
+.time-header .th-toggle {
+  flex: 0 0 auto;
+  align-self: center;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: calc(18px * var(--fs)); height: calc(18px * var(--fs));
+  /* Negative vertical margin keeps the header's height unchanged; the negative
+     right margin pulls the time label in close to the chevron (the 6px header
+     gap alone left it floating too far). */
+  margin: calc(-4px * var(--fs)) -3px calc(-4px * var(--fs)) -2px;
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: calc(13px * var(--fs));
+  position: relative; z-index: 1;
+}
+.time-header .th-toggle svg { width: 1em; height: 1em; }
+.time-header .th-toggle:active { background: var(--accent-soft); }
+@media (hover: hover) {
+  .time-header .th-toggle:hover { color: var(--accent); }
 }
 body[data-active-tab="me"] .time-header .th-text,
 body[data-active-view="session-detail"] .time-header .th-text,
@@ -2621,8 +2681,19 @@ body[data-active-view="session-detail"] .detail-head {
 .inst-list li.clickable:active {
   background: var(--accent-soft);
 }
+/* Affiliation text + its chip on one flex row. Baseline alignment ties the
+   chip to the affiliation's FIRST line, so the chip sits at the same vertical
+   spot whether the affiliation is one line or wraps to several. inst-long won't
+   grow (flex-grow 0) so a SHORT affiliation keeps the chip right beside it; a
+   LONG one shrinks the text column and the chip rides at the top-right. */
+.inst-list .inst-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.inst-list .inst-long { flex: 0 1 auto; min-width: 0; }
 .inst-list .inst-short {
-  display: inline-block;
+  flex: 0 0 auto;
   font-size: calc(11px * var(--fs));
   font-weight: 600;
   letter-spacing: .02em;
@@ -2631,8 +2702,8 @@ body[data-active-view="session-detail"] .detail-head {
   padding: 2px 8px;
   border-radius: 999px;
   white-space: nowrap;
-  margin-left: 8px;
-  vertical-align: 2px;
+  /* No vertical nudge: the flex row's `align-items: baseline` already sits the
+     chip's text baseline on the affiliation's first-line baseline. */
 }
 
 .abstract-body {
@@ -3238,7 +3309,9 @@ body.has-indicator #scroll-indicator { display: flex; }
 
 <header id="topbar">
   <button id="back-btn" hidden>‹&nbsp;Back</button>
+  <div id="topbar-left"></div>
   <h1 id="page-title">Sessions</h1>
+  <span id="now-clock" hidden></span>
   <div id="topbar-extra"></div>
 </header>
 <div id="scroll-indicator" aria-hidden="true"></div>
@@ -3635,11 +3708,14 @@ function isTypeHidden(color) {
 /* The app's notion of "now". Normally this is the real wall clock, but a
    search of the form  NOW YYYY-MM-DD HH:MM  pins it to a fixed instant so
    time-based behavior (the "Now" group, past/upcoming filtering, the
-   "today" header) can be tested even though the conference is over. The
-   override lives only in memory (a module-local variable), so it lasts
-   until the page is reloaded and is never persisted. See applyNowOverride
-   / handleNowSearch. */
+   "today" header) can be tested even though the conference is over. A
+   FAST YYYY-MM-DD HH:MM  directive does the same but then advances the
+   pinned clock at one minute per real second (see applyFastOverride), so
+   time-based behavior can be watched evolving. The override lives only in
+   memory (module-local variables), so it lasts until the page is reloaded
+   and is never persisted. See applyNowOverride / applyFastOverride. */
 let _nowOverride = null;   // number (ms) when pinned, else null
+let _fastTimer   = null;   // setInterval handle while FAST is running, else null
 
 function nowMs() {
   return _nowOverride != null ? _nowOverride : Date.now();
@@ -3697,6 +3773,11 @@ function timeLabel(d) {
   h = h % 12 || 12;
   return `${h}:${m.toString().padStart(2,"0")} ${ap}`;
 }
+/* Compact "Mon D · H:MM AM" stamp for the green pinned-clock readout. */
+function clockLabel(ms) {
+  const d = new Date(ms);
+  return `${_MON[d.getMonth()]} ${d.getDate()} · ${timeLabel(d)}`;
+}
 function timeRange(item) {
   const s = tsToDate(item.start_ts), e = tsToDate(item.end_ts);
   if (s && e) return `${timeLabel(s)} – ${timeLabel(e)}`;
@@ -3712,18 +3793,21 @@ function cmpTs(a, b) {
    app's notion of "now" (nowMs) to that instant until the page is reloaded,
    so the conference's time-based behavior — the "Now" group, past/upcoming
    filtering, the "today" header — can be exercised even though the real
-   conference is over. The timestamp is interpreted in LOCAL time (same zone
-   the start/end timestamps render in), matches "now" semantics elsewhere.
+   conference is over. A  FAST YYYY-MM-DD HH:MM  directive is the same but
+   then advances the pinned clock at 1 minute per real second. The timestamp
+   is interpreted in LOCAL time (same zone the start/end timestamps render in),
+   matching "now" semantics elsewhere.
 
-   parseNowOverride returns the ms value for a matching query, or null if the
-   query isn't a NOW directive. A malformed date after the NOW keyword still
-   counts as "a NOW directive" (returns NaN) so the caller can report it
-   rather than fall through to an ordinary search. */
-function parseNowOverride(raw) {
-  const m = /^NOW\s+(\d{4})-(\d{2})-(\d{2})\s+(\d{1,2}):(\d{2})$/.exec(
+   parseClockDirective returns { mode, ms } for a matching query (mode is
+   "NOW" or "FAST"), or null if the query isn't a clock directive. A malformed
+   date after the keyword still counts as a directive (ms = NaN) so the caller
+   can report it rather than fall through to an ordinary search. */
+function parseClockDirective(raw) {
+  const m = /^(NOW|FAST)\s+(\d{4})-(\d{2})-(\d{2})\s+(\d{1,2}):(\d{2})$/i.exec(
     (raw || "").trim());
   if (!m) return null;
-  const [, y, mo, da, hh, mm] = m;
+  const mode = m[1].toUpperCase();
+  const [, , y, mo, da, hh, mm] = m;
   // Local-time construction (month is 0-based). Invalid components (e.g.
   // 13 for month, 25 for hour) yield an out-of-range / NaN Date, which we
   // surface as NaN so the caller can flag it.
@@ -3733,9 +3817,9 @@ function parseNowOverride(raw) {
   if (d.getFullYear() !== +y || d.getMonth() !== +mo - 1 ||
       d.getDate() !== +da || d.getHours() !== +hh ||
       d.getMinutes() !== +mm) {
-    return NaN;
+    return { mode, ms: NaN };
   }
-  return d.getTime();
+  return { mode, ms: d.getTime() };
 }
 
 /* =============================================================== */
@@ -4831,6 +4915,29 @@ function renderTimeGrouped(container, items, opts = {}) {
     filtered = out;
   }
 
+  // Per-time-header expand/collapse: gather the expandable session ids in each
+  // time bucket so every header can carry a button that opens/closes just the
+  // sessions competing at that time. Only meaningful on the expandable Sessions
+  // list; the "Now" pseudo-bucket is keyed separately. Keyed by date+time so a
+  // time label repeated across days (e.g. "8:00 AM" on two mornings) stays
+  // distinct.
+  const NOW_BUCKET = "__now__";
+  const bucketSessionIds = new Map();
+  if (opts.expandable) {
+    const addToBucket = (key, it) => {
+      if (it.session_id) return;                 // talks don't expand
+      if (!isExpandableSession(it.id)) return;
+      let arr = bucketSessionIds.get(key);
+      if (!arr) bucketSessionIds.set(key, arr = []);
+      arr.push(it.id);
+    };
+    for (const it of nowItems) addToBucket(NOW_BUCKET, it);
+    for (const it of filtered) {
+      const d = tsToDate(it.start_ts);
+      if (d) addToBucket(`${dateLabel(d)}|${timeLabel(d)}`, it);
+    }
+  }
+
   const frag = document.createDocumentFragment();
   let curDate = null, curTime = null;
 
@@ -4843,6 +4950,10 @@ function renderTimeGrouped(container, items, opts = {}) {
     frag.appendChild(el("h2", { class: "date-header" }, todayLabel));
     curDate = todayLabel;
     const th = el("h3", { class: "time-header" });
+    if (opts.expandable) {
+      const btn = makeTimeToggle(bucketSessionIds.get(NOW_BUCKET));
+      if (btn) th.appendChild(btn);
+    }
     th.appendChild(el("span", { class: "th-text" }, "Now"));
     frag.appendChild(th);
     curTime = "Now";
@@ -4875,6 +4986,10 @@ function renderTimeGrouped(container, items, opts = {}) {
     // time-headers entirely and let the bubbles abut.
     if (!opts.inlineTime && tk !== curTime) {
       const th = el("h3", { class: "time-header" });
+      if (opts.expandable) {
+        const btn = makeTimeToggle(bucketSessionIds.get(`${dk}|${tk}`));
+        if (btn) th.appendChild(btn);
+      }
       th.appendChild(el("span", { class: "th-text" }, tk));
       frag.appendChild(th);
       curTime = tk;
@@ -5047,8 +5162,18 @@ function renderSessionDetail(c, sid) {
    full detail, so there's nothing to append — no empty box, no "No talks"
    placeholder, no wasted vertical space. */
 function buildSessionExpansion(s) {
-  const talks = (s.talk_ids || []).map(id => talkMap[id]).filter(Boolean)
+  let talks = (s.talk_ids || []).map(id => talkMap[id]).filter(Boolean)
                  .sort((a,b) => cmpTs(a.start_ts, b.start_ts));
+  // Unlike session DETAIL (which always lists the full agenda — see
+  // renderSessionDetail's alwaysAll), the inline expansion in the Sessions
+  // list honors the global Concluded toggle: with it off, hide talks that are
+  // past or withdrawn (neither can still be attended), matching how the
+  // surrounding list filters its top-level rows. If that leaves nothing, the
+  // expansion collapses to null below — the session bubble already carries the
+  // full detail, so no empty box is needed.
+  if (!state.showPast) {
+    talks = talks.filter(t => !isPast(t) && !isWithdrawn(t));
+  }
   if (talks.length === 0) return null;
   const box = el("div", {
     class: `session-expansion clr-${s.color}`,
@@ -5162,13 +5287,19 @@ function renderTalkDetail(c, tid) {
         value: num,
         title: shortForm ? `Search for “${shortForm}”` : "",
       });
-      li.appendChild(el("span", { class: "inst-long" }, longForm));
+      // Long affiliation text and its short-form chip share a flex row so the
+      // chip stays pinned to the FIRST line of the (often multi-line) text via
+      // baseline alignment. Left inline, the chip flows onto the LAST wrapped
+      // line, so its vertical position jumped around from row to row.
+      const row = el("span", { class: "inst-row" });
+      row.appendChild(el("span", { class: "inst-long" }, longForm));
       // Always show the short-form chip when one exists — even when it's
       // identical to the (full) affiliation — so every institution row carries
       // its clickable chip consistently.
       if (shortForm) {
-        li.appendChild(el("span", { class: "inst-short" }, shortForm));
+        row.appendChild(el("span", { class: "inst-short" }, shortForm));
       }
+      li.appendChild(row);
       if (shortForm) {
         li.addEventListener("click", () => searchFor(shortForm, "affil"));
       }
@@ -5584,12 +5715,53 @@ function renderSearch(c) {
    pane directly, and only full-render when the left pane is on some OTHER
    (time-dependent) view. */
 function applyNowOverride(ms) {
+  stopFastClock();     // a fresh NOW pin cancels any running FAST run
   _nowOverride = ms;
+  refreshForNow();
+}
+
+/* Pin the clock to `ms` and then advance it at one minute per real second,
+   re-rendering each tick so the "Now" group, past/upcoming filtering and the
+   "today" header can be watched evolving. Like NOW, this is in-memory only and
+   disappears on reload; typing a NOW (or another FAST) directive replaces it. */
+function applyFastOverride(ms) {
+  stopFastClock();
+  _nowOverride = ms;
+  refreshForNow();
+  _fastTimer = setInterval(() => {
+    _nowOverride += 60000;   // +1 minute of app-time per real second
+    refreshForNow();
+  }, 1000);
+}
+
+function stopFastClock() {
+  if (_fastTimer != null) { clearInterval(_fastTimer); _fastTimer = null; }
+}
+
+/* Shared refresh for a changed `_nowOverride`: the green top-bar clock, the
+   wide-screen Me pane, and (unless we're sitting on the Search list, which
+   would re-enter this path) the left list/detail. */
+function refreshForNow() {
+  updateNowClock();
   renderMePane();      // wide-screen right pane; no-op on narrow screens
   drawMeConnectors();
   if (currentTopView() !== "list" || state.activeTab !== "search") {
-    // Safe: not the Search list, so re-rendering won't re-enter this path.
     render();
+  }
+}
+
+/* Show or hide the green pinned-clock readout in the top bar to match the
+   current override state. Cheap and idempotent — safe to call on every tick
+   and after every render. */
+function updateNowClock() {
+  const elc = $("#now-clock");
+  if (!elc) return;
+  if (_nowOverride == null) {
+    elc.hidden = true;
+    elc.textContent = "";
+  } else {
+    elc.textContent = clockLabel(_nowOverride);
+    elc.hidden = false;
   }
 }
 
@@ -5615,24 +5787,33 @@ function rebuildSearchResults() {
     return;
   }
 
-  // Testing directive: "NOW YYYY-MM-DD HH:MM" pins the app's clock instead
-  // of running a search. Handled before the min-length check so the user
-  // gets immediate feedback as they finish typing it.
-  const nowParsed = parseNowOverride(raw);
-  if (nowParsed !== null) {
-    if (Number.isNaN(nowParsed)) {
+  // Testing directives: "NOW YYYY-MM-DD HH:MM" pins the app's clock, and
+  // "FAST YYYY-MM-DD HH:MM" pins it and then advances it at 1 minute per real
+  // second, instead of running a search. Handled before the min-length check
+  // so the user gets immediate feedback as they finish typing it.
+  const clockDir = parseClockDirective(raw);
+  if (clockDir !== null) {
+    if (Number.isNaN(clockDir.ms)) {
       wrap.appendChild(el("p", { class: "empty" },
-        "Couldn’t read that date. Use NOW YYYY-MM-DD HH:MM "
-        + "(24-hour), e.g. NOW 2026-05-12 14:30."));
+        `Couldn’t read that date. Use ${clockDir.mode} YYYY-MM-DD HH:MM `
+        + `(24-hour), e.g. ${clockDir.mode} 2026-05-12 14:30.`));
       return;
     }
-    applyNowOverride(nowParsed);
-    const when = `${dateLabel(new Date(nowParsed))}, `
-               + `${timeLabel(new Date(nowParsed))}`;
+    const when = `${dateLabel(new Date(clockDir.ms))}, `
+               + `${timeLabel(new Date(clockDir.ms))}`;
     const box = el("div", { class: "now-override-note" });
-    box.appendChild(el("p", { class: "empty" },
-      `Clock pinned to ${when}. Time-based views now behave as if that’s `
-      + `the current time. Reload the page to return to the real clock.`));
+    if (clockDir.mode === "FAST") {
+      applyFastOverride(clockDir.ms);
+      box.appendChild(el("p", { class: "empty" },
+        `Clock started at ${when} and now advances at 1 minute per second. `
+        + `Time-based views update live. Reload the page to return to the `
+        + `real clock.`));
+    } else {
+      applyNowOverride(clockDir.ms);
+      box.appendChild(el("p", { class: "empty" },
+        `Clock pinned to ${when}. Time-based views now behave as if that’s `
+        + `the current time. Reload the page to return to the real clock.`));
+    }
     wrap.appendChild(box);
     return;
   }
@@ -6719,9 +6900,23 @@ function formatLastSync(ts) {
 /* topbar extras (Copy/Paste on Me)                                 */
 /* =============================================================== */
 
+/* The stroked double-chevron icon shared by every expand/collapse control
+   (the top bar's all-sessions toggle and each time header's per-bucket toggle).
+   dir "down" = chevrons point down = "open below"; "up" = "close up". */
+function chevronsSvg(dir) {
+  const paths = dir === "up"
+    ? '<path d="M5 9.5 12 4l7 5.5"></path><path d="M5 15.5 12 10l7 5.5"></path>'
+    : '<path d="M5 8.5 12 14l7-5.5"></path><path d="M5 14.5 12 20l7-5.5"></path>';
+  return '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" '
+       + 'stroke="currentColor" stroke-width="2" stroke-linecap="round" '
+       + 'stroke-linejoin="round" aria-hidden="true">' + paths + '</svg>';
+}
+
 function renderTopbarExtras(tab, top) {
   const slot = $("#topbar-extra");
   slot.innerHTML = "";
+  const left = $("#topbar-left");
+  if (left) left.innerHTML = "";
   if (tab === "me" && top.view === "list") {
     // "Last sync" sits just left of the Copy/Paste buttons, mirroring the
     // wide Me pane's header so the one-pane and two-pane Me views read the
@@ -6743,8 +6938,8 @@ function renderTopbarExtras(tab, top) {
       "aria-label": "Copy sync code",
       onclick: doCopy,
     }, "⧉"));
-  } else if (tab === "sessions" && top.view === "list") {
-    // Sessions ROOT list corner: a single toggle between Expand All and
+  } else if (tab === "sessions" && top.view === "list" && left) {
+    // Sessions ROOT list, LEFT corner: a single toggle between Expand All and
     // Collapse All for the inline session expansions. (There's no longer a
     // Home/reset control — tapping the Sessions tab itself returns to this
     // list; see switchTab.) When anything is expanded we offer Collapse All;
@@ -6752,27 +6947,19 @@ function renderTopbarExtras(tab, top) {
     // the same stroked double-chevron idiom (down = open below, up = close up)
     // so the corner's rendering style is stable as it toggles.
     if ((state.expandedSessions || []).length) {
-      slot.appendChild(el("button", {
+      left.appendChild(el("button", {
         class: "icon-btn",
         title: "Collapse all sessions",
         "aria-label": "Collapse all sessions",
-        html: '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" '
-            + 'stroke="currentColor" stroke-width="2" stroke-linecap="round" '
-            + 'stroke-linejoin="round" aria-hidden="true">'
-            + '<path d="M5 9.5 12 4l7 5.5"></path>'
-            + '<path d="M5 15.5 12 10l7 5.5"></path></svg>',
+        html: chevronsSvg("up"),
         onclick: collapseAllSessions,
       }));
     } else if (expandableSessionIds().length) {
-      slot.appendChild(el("button", {
+      left.appendChild(el("button", {
         class: "icon-btn",
         title: "Expand all sessions",
         "aria-label": "Expand all sessions",
-        html: '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" '
-            + 'stroke="currentColor" stroke-width="2" stroke-linecap="round" '
-            + 'stroke-linejoin="round" aria-hidden="true">'
-            + '<path d="M5 8.5 12 14l7-5.5"></path>'
-            + '<path d="M5 14.5 12 20l7-5.5"></path></svg>',
+        html: chevronsSvg("down"),
         onclick: expandAllSessions,
       }));
     }
@@ -7942,10 +8129,7 @@ function pageTitleFor(tab, top) {
     const query = ci < 0 ? rest : rest.slice(ci + 1);
     return query || "Search";
   }
-  const conf = (DATA.conference_name || "").trim();
-  const sessionsTitle = conf ? conf + " Sessions" : "Sessions";
-  const talksTitle    = conf ? conf + " Talks"    : "Talks";
-  return ({ sessions: sessionsTitle, talks: talksTitle, search: "Search", me: "My Schedule" })[tab];
+  return ({ sessions: "Sessions", talks: "Talks", search: "Search", me: "My Schedule" })[tab];
 }
 
 function render() {
@@ -8411,6 +8595,68 @@ function expandAllSessions() {
       updateScrollIndicator();
     }));
   }
+}
+
+/* Expand or collapse exactly the sessions in ONE time bucket — the per-time
+   header control (see makeTimeToggle / renderTimeGrouped). `ids` are the
+   expandable session ids that start at that time; if any one is currently open
+   we collapse the whole bucket, otherwise we open all of them. The list reflows
+   taller or shorter, so we re-anchor on the bubble that was at the top of the
+   viewport — the same place-preserving dance Collapse/Expand All use. */
+function toggleTimeBucketSessions(ids) {
+  if (!ids || !ids.length) return;
+  const open = new Set(state.expandedSessions || []);
+  const anyOpen = ids.some(id => open.has(id));
+
+  const anchor = captureListAnchor();
+  snapshotScroll();
+  if (anyOpen) {
+    for (const id of ids) open.delete(id);
+  } else {
+    for (const id of ids) if (isExpandableSession(id)) open.add(id);
+  }
+  state.expandedSessions = [...open];
+
+  // Keep the root entry's saved position in step with where we are, so render's
+  // own restore agrees with the re-anchor below (matches Collapse All).
+  const stack = state.tabStacks[state.activeTab];
+  stack[0].scrollY = leftScrollTop();
+  stack[0].scrollAnchor = anchor || null;
+
+  saveState();
+  _replaceNav();
+  // Drop the inline-expansion connector overlay synchronously so a collapsing
+  // bucket's old spine doesn't flash before the post-layout redraw.
+  const svg = document.querySelector("#session-list-connectors");
+  if (svg) svg.remove();
+  render();
+
+  if (anchor) {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      restoreListAnchor(anchor);
+      updateScrollIndicator();
+    }));
+  }
+}
+
+/* The compact expand/collapse button for a single time header: opens all the
+   sessions competing at that time, or collapses them if any is already open.
+   Returns null when the bucket holds no expandable session (so the header just
+   shows its time text). */
+function makeTimeToggle(ids) {
+  if (!ids || !ids.length) return null;
+  const open = new Set(state.expandedSessions || []);
+  const anyOpen = ids.some(id => open.has(id));
+  const label = anyOpen
+    ? "Collapse sessions at this time"
+    : "Expand all sessions at this time";
+  return el("button", {
+    class: "th-toggle",
+    title: label,
+    "aria-label": label,
+    html: chevronsSvg(anyOpen ? "up" : "down"),
+    onclick: (e) => { e.stopPropagation(); toggleTimeBucketSessions(ids); },
+  });
 }
 
 /* Tapping a tab takes you to that section's MAIN list, in the place you last

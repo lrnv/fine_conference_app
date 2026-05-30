@@ -154,18 +154,27 @@ button {
 @media (prefers-color-scheme: dark) {
   #topbar { background: rgb(17,17,17); }
 }
+
 #back-btn {
   height: var(--top-h); padding: 0 14px;
   font-size: calc(17px * var(--fs)); color: var(--accent);
   display: flex; align-items: center; gap: 2px;
+  grid-column: 1; grid-row: 1;
   justify-self: start;
 }
 #back-btn[hidden] { display: none; }
+
+#topbar-left {
+  grid-column: 1; grid-row: 1;
+  justify-self: start;
+  display: flex; align-items: center;
+  padding-left: 8px;
+}
 #page-title {
   margin: 0; padding: 0 8px;
   font-size: calc(16px * var(--fs)); font-weight: 600; letter-spacing: .01em;
   text-align: center;
-  grid-column: 2;
+  grid-column: 2; grid-row: 1;
 }
 
 body[data-active-tab="me"] #back-btn[hidden] ~ #page-title {
@@ -173,7 +182,24 @@ body[data-active-tab="me"] #back-btn[hidden] ~ #page-title {
   text-align: left;
   padding-left: 14px;
 }
+
+#now-clock {
+  grid-column: 3; grid-row: 1;
+  justify-self: start;
+  align-self: center;
+  padding-left: 10px;
+  font-size: calc(13px * var(--fs));
+  font-weight: 600;
+  color: #15a34a;
+  white-space: nowrap;
+  pointer-events: none;
+}
+#now-clock[hidden] { display: none; }
+@media (prefers-color-scheme: dark) {
+  #now-clock { color: #4ade80; }
+}
 #topbar-extra {
+  grid-column: 3; grid-row: 1;
   display: flex; align-items: center;
   padding-right: 8px;
   justify-self: end;
@@ -235,7 +261,7 @@ body[data-active-tab="me"] #back-btn[hidden] ~ #page-title {
   margin: 4px 2px 2px;
   font-size: calc(11px * var(--fs)); font-weight: 600;
   color: var(--muted);
-  display: flex; align-items: baseline; gap: 8px;
+  display: flex; align-items: baseline; gap: 6px;
 }
 .time-header::after {
   content: ""; flex: 1; height: 1px; background: var(--line);
@@ -244,6 +270,24 @@ body[data-active-tab="me"] #back-btn[hidden] ~ #page-title {
 .time-header .th-text {
   border-radius: 4px;
   padding: 0;
+}
+
+.time-header .th-toggle {
+  flex: 0 0 auto;
+  align-self: center;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: calc(18px * var(--fs)); height: calc(18px * var(--fs));
+  
+  margin: calc(-4px * var(--fs)) -3px calc(-4px * var(--fs)) -2px;
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: calc(13px * var(--fs));
+  position: relative; z-index: 1;
+}
+.time-header .th-toggle svg { width: 1em; height: 1em; }
+.time-header .th-toggle:active { background: var(--accent-soft); }
+@media (hover: hover) {
+  .time-header .th-toggle:hover { color: var(--accent); }
 }
 body[data-active-tab="me"] .time-header .th-text,
 body[data-active-view="session-detail"] .time-header .th-text,
@@ -714,8 +758,15 @@ body[data-active-view="session-detail"] .detail-head {
 .inst-list li.clickable:active {
   background: var(--accent-soft);
 }
+
+.inst-list .inst-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.inst-list .inst-long { flex: 0 1 auto; min-width: 0; }
 .inst-list .inst-short {
-  display: inline-block;
+  flex: 0 0 auto;
   font-size: calc(11px * var(--fs));
   font-weight: 600;
   letter-spacing: .02em;
@@ -724,8 +775,7 @@ body[data-active-view="session-detail"] .detail-head {
   padding: 2px 8px;
   border-radius: 999px;
   white-space: nowrap;
-  margin-left: 8px;
-  vertical-align: 2px;
+  
 }
 
 .abstract-body {
@@ -1203,7 +1253,9 @@ body.has-indicator #scroll-indicator { display: flex; }
 
 <header id="topbar">
   <button id="back-btn" hidden>‹&nbsp;Back</button>
+  <div id="topbar-left"></div>
   <h1 id="page-title">Sessions</h1>
+  <span id="now-clock" hidden></span>
   <div id="topbar-extra"></div>
 </header>
 <div id="scroll-indicator" aria-hidden="true"></div>
@@ -1830,6 +1882,7 @@ function isTypeHidden(color) {
 }
 
 let _nowOverride = null;   
+let _fastTimer   = null;   
 
 function nowMs() {
   return _nowOverride != null ? _nowOverride : Date.now();
@@ -1875,6 +1928,11 @@ function timeLabel(d) {
   h = h % 12 || 12;
   return `${h}:${m.toString().padStart(2,"0")} ${ap}`;
 }
+
+function clockLabel(ms) {
+  const d = new Date(ms);
+  return `${_MON[d.getMonth()]} ${d.getDate()} · ${timeLabel(d)}`;
+}
 function timeRange(item) {
   const s = tsToDate(item.start_ts), e = tsToDate(item.end_ts);
   if (s && e) return `${timeLabel(s)} – ${timeLabel(e)}`;
@@ -1886,20 +1944,21 @@ function cmpTs(a, b) {
   return a < b ? -1 : a > b ? 1 : 0;
 }
 
-function parseNowOverride(raw) {
-  const m = /^NOW\s+(\d{4})-(\d{2})-(\d{2})\s+(\d{1,2}):(\d{2})$/.exec(
+function parseClockDirective(raw) {
+  const m = /^(NOW|FAST)\s+(\d{4})-(\d{2})-(\d{2})\s+(\d{1,2}):(\d{2})$/i.exec(
     (raw || "").trim());
   if (!m) return null;
-  const [, y, mo, da, hh, mm] = m;
+  const mode = m[1].toUpperCase();
+  const [, , y, mo, da, hh, mm] = m;
 
   const d = new Date(+y, +mo - 1, +da, +hh, +mm, 0, 0);
 
   if (d.getFullYear() !== +y || d.getMonth() !== +mo - 1 ||
       d.getDate() !== +da || d.getHours() !== +hh ||
       d.getMinutes() !== +mm) {
-    return NaN;
+    return { mode, ms: NaN };
   }
-  return d.getTime();
+  return { mode, ms: d.getTime() };
 }
 
 function toggleScheduled(id) {
@@ -2630,6 +2689,23 @@ function renderTimeGrouped(container, items, opts = {}) {
     filtered = out;
   }
 
+  const NOW_BUCKET = "__now__";
+  const bucketSessionIds = new Map();
+  if (opts.expandable) {
+    const addToBucket = (key, it) => {
+      if (it.session_id) return;                 
+      if (!isExpandableSession(it.id)) return;
+      let arr = bucketSessionIds.get(key);
+      if (!arr) bucketSessionIds.set(key, arr = []);
+      arr.push(it.id);
+    };
+    for (const it of nowItems) addToBucket(NOW_BUCKET, it);
+    for (const it of filtered) {
+      const d = tsToDate(it.start_ts);
+      if (d) addToBucket(`${dateLabel(d)}|${timeLabel(d)}`, it);
+    }
+  }
+
   const frag = document.createDocumentFragment();
   let curDate = null, curTime = null;
 
@@ -2639,6 +2715,10 @@ function renderTimeGrouped(container, items, opts = {}) {
     frag.appendChild(el("h2", { class: "date-header" }, todayLabel));
     curDate = todayLabel;
     const th = el("h3", { class: "time-header" });
+    if (opts.expandable) {
+      const btn = makeTimeToggle(bucketSessionIds.get(NOW_BUCKET));
+      if (btn) th.appendChild(btn);
+    }
     th.appendChild(el("span", { class: "th-text" }, "Now"));
     frag.appendChild(th);
     curTime = "Now";
@@ -2667,6 +2747,10 @@ function renderTimeGrouped(container, items, opts = {}) {
 
     if (!opts.inlineTime && tk !== curTime) {
       const th = el("h3", { class: "time-header" });
+      if (opts.expandable) {
+        const btn = makeTimeToggle(bucketSessionIds.get(`${dk}|${tk}`));
+        if (btn) th.appendChild(btn);
+      }
       th.appendChild(el("span", { class: "th-text" }, tk));
       frag.appendChild(th);
       curTime = tk;
@@ -2796,8 +2880,12 @@ function renderSessionDetail(c, sid) {
 }
 
 function buildSessionExpansion(s) {
-  const talks = (s.talk_ids || []).map(id => talkMap[id]).filter(Boolean)
+  let talks = (s.talk_ids || []).map(id => talkMap[id]).filter(Boolean)
                  .sort((a,b) => cmpTs(a.start_ts, b.start_ts));
+
+  if (!state.showPast) {
+    talks = talks.filter(t => !isPast(t) && !isWithdrawn(t));
+  }
   if (talks.length === 0) return null;
   const box = el("div", {
     class: `session-expansion clr-${s.color}`,
@@ -2893,11 +2981,14 @@ function renderTalkDetail(c, tid) {
         value: num,
         title: shortForm ? `Search for “${shortForm}”` : "",
       });
-      li.appendChild(el("span", { class: "inst-long" }, longForm));
+
+      const row = el("span", { class: "inst-row" });
+      row.appendChild(el("span", { class: "inst-long" }, longForm));
 
       if (shortForm) {
-        li.appendChild(el("span", { class: "inst-short" }, shortForm));
+        row.appendChild(el("span", { class: "inst-short" }, shortForm));
       }
+      li.appendChild(row);
       if (shortForm) {
         li.addEventListener("click", () => searchFor(shortForm, "affil"));
       }
@@ -3189,12 +3280,43 @@ function renderSearch(c) {
 }
 
 function applyNowOverride(ms) {
+  stopFastClock();     
   _nowOverride = ms;
+  refreshForNow();
+}
+
+function applyFastOverride(ms) {
+  stopFastClock();
+  _nowOverride = ms;
+  refreshForNow();
+  _fastTimer = setInterval(() => {
+    _nowOverride += 60000;   
+    refreshForNow();
+  }, 1000);
+}
+
+function stopFastClock() {
+  if (_fastTimer != null) { clearInterval(_fastTimer); _fastTimer = null; }
+}
+
+function refreshForNow() {
+  updateNowClock();
   renderMePane();      
   drawMeConnectors();
   if (currentTopView() !== "list" || state.activeTab !== "search") {
-    
     render();
+  }
+}
+
+function updateNowClock() {
+  const elc = $("#now-clock");
+  if (!elc) return;
+  if (_nowOverride == null) {
+    elc.hidden = true;
+    elc.textContent = "";
+  } else {
+    elc.textContent = clockLabel(_nowOverride);
+    elc.hidden = false;
   }
 }
 
@@ -3213,21 +3335,29 @@ function rebuildSearchResults() {
     return;
   }
 
-  const nowParsed = parseNowOverride(raw);
-  if (nowParsed !== null) {
-    if (Number.isNaN(nowParsed)) {
+  const clockDir = parseClockDirective(raw);
+  if (clockDir !== null) {
+    if (Number.isNaN(clockDir.ms)) {
       wrap.appendChild(el("p", { class: "empty" },
-        "Couldn’t read that date. Use NOW YYYY-MM-DD HH:MM "
-        + "(24-hour), e.g. NOW 2026-05-12 14:30."));
+        `Couldn’t read that date. Use ${clockDir.mode} YYYY-MM-DD HH:MM `
+        + `(24-hour), e.g. ${clockDir.mode} 2026-05-12 14:30.`));
       return;
     }
-    applyNowOverride(nowParsed);
-    const when = `${dateLabel(new Date(nowParsed))}, `
-               + `${timeLabel(new Date(nowParsed))}`;
+    const when = `${dateLabel(new Date(clockDir.ms))}, `
+               + `${timeLabel(new Date(clockDir.ms))}`;
     const box = el("div", { class: "now-override-note" });
-    box.appendChild(el("p", { class: "empty" },
-      `Clock pinned to ${when}. Time-based views now behave as if that’s `
-      + `the current time. Reload the page to return to the real clock.`));
+    if (clockDir.mode === "FAST") {
+      applyFastOverride(clockDir.ms);
+      box.appendChild(el("p", { class: "empty" },
+        `Clock started at ${when} and now advances at 1 minute per second. `
+        + `Time-based views update live. Reload the page to return to the `
+        + `real clock.`));
+    } else {
+      applyNowOverride(clockDir.ms);
+      box.appendChild(el("p", { class: "empty" },
+        `Clock pinned to ${when}. Time-based views now behave as if that’s `
+        + `the current time. Reload the page to return to the real clock.`));
+    }
     wrap.appendChild(box);
     return;
   }
@@ -4002,9 +4132,20 @@ function formatLastSync(ts) {
   return `Synced ${dateLabel(d)}`;
 }
 
+function chevronsSvg(dir) {
+  const paths = dir === "up"
+    ? '<path d="M5 9.5 12 4l7 5.5"></path><path d="M5 15.5 12 10l7 5.5"></path>'
+    : '<path d="M5 8.5 12 14l7-5.5"></path><path d="M5 14.5 12 20l7-5.5"></path>';
+  return '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" '
+       + 'stroke="currentColor" stroke-width="2" stroke-linecap="round" '
+       + 'stroke-linejoin="round" aria-hidden="true">' + paths + '</svg>';
+}
+
 function renderTopbarExtras(tab, top) {
   const slot = $("#topbar-extra");
   slot.innerHTML = "";
+  const left = $("#topbar-left");
+  if (left) left.innerHTML = "";
   if (tab === "me" && top.view === "list") {
 
     slot.appendChild(el("span", {
@@ -4023,30 +4164,22 @@ function renderTopbarExtras(tab, top) {
       "aria-label": "Copy sync code",
       onclick: doCopy,
     }, "⧉"));
-  } else if (tab === "sessions" && top.view === "list") {
+  } else if (tab === "sessions" && top.view === "list" && left) {
 
     if ((state.expandedSessions || []).length) {
-      slot.appendChild(el("button", {
+      left.appendChild(el("button", {
         class: "icon-btn",
         title: "Collapse all sessions",
         "aria-label": "Collapse all sessions",
-        html: '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" '
-            + 'stroke="currentColor" stroke-width="2" stroke-linecap="round" '
-            + 'stroke-linejoin="round" aria-hidden="true">'
-            + '<path d="M5 9.5 12 4l7 5.5"></path>'
-            + '<path d="M5 15.5 12 10l7 5.5"></path></svg>',
+        html: chevronsSvg("up"),
         onclick: collapseAllSessions,
       }));
     } else if (expandableSessionIds().length) {
-      slot.appendChild(el("button", {
+      left.appendChild(el("button", {
         class: "icon-btn",
         title: "Expand all sessions",
         "aria-label": "Expand all sessions",
-        html: '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" '
-            + 'stroke="currentColor" stroke-width="2" stroke-linecap="round" '
-            + 'stroke-linejoin="round" aria-hidden="true">'
-            + '<path d="M5 8.5 12 14l7-5.5"></path>'
-            + '<path d="M5 14.5 12 20l7-5.5"></path></svg>',
+        html: chevronsSvg("down"),
         onclick: expandAllSessions,
       }));
     }
@@ -4929,10 +5062,7 @@ function pageTitleFor(tab, top) {
     const query = ci < 0 ? rest : rest.slice(ci + 1);
     return query || "Search";
   }
-  const conf = (DATA.conference_name || "").trim();
-  const sessionsTitle = conf ? conf + " Sessions" : "Sessions";
-  const talksTitle    = conf ? conf + " Talks"    : "Talks";
-  return ({ sessions: sessionsTitle, talks: talksTitle, search: "Search", me: "My Schedule" })[tab];
+  return ({ sessions: "Sessions", talks: "Talks", search: "Search", me: "My Schedule" })[tab];
 }
 
 function render() {
@@ -5235,6 +5365,55 @@ function expandAllSessions() {
       updateScrollIndicator();
     }));
   }
+}
+
+function toggleTimeBucketSessions(ids) {
+  if (!ids || !ids.length) return;
+  const open = new Set(state.expandedSessions || []);
+  const anyOpen = ids.some(id => open.has(id));
+
+  const anchor = captureListAnchor();
+  snapshotScroll();
+  if (anyOpen) {
+    for (const id of ids) open.delete(id);
+  } else {
+    for (const id of ids) if (isExpandableSession(id)) open.add(id);
+  }
+  state.expandedSessions = [...open];
+
+  const stack = state.tabStacks[state.activeTab];
+  stack[0].scrollY = leftScrollTop();
+  stack[0].scrollAnchor = anchor || null;
+
+  saveState();
+  _replaceNav();
+
+  const svg = document.querySelector("#session-list-connectors");
+  if (svg) svg.remove();
+  render();
+
+  if (anchor) {
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      restoreListAnchor(anchor);
+      updateScrollIndicator();
+    }));
+  }
+}
+
+function makeTimeToggle(ids) {
+  if (!ids || !ids.length) return null;
+  const open = new Set(state.expandedSessions || []);
+  const anyOpen = ids.some(id => open.has(id));
+  const label = anyOpen
+    ? "Collapse sessions at this time"
+    : "Expand all sessions at this time";
+  return el("button", {
+    class: "th-toggle",
+    title: label,
+    "aria-label": label,
+    html: chevronsSvg(anyOpen ? "up" : "down"),
+    onclick: (e) => { e.stopPropagation(); toggleTimeBucketSessions(ids); },
+  });
 }
 
 function switchTab(tab) {
