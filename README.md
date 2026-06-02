@@ -46,8 +46,10 @@ If your conference doesn't have a subdirectory yet, you will need to create one.
 
 A curated conference consists of two scripts:
 
-1. **A downloader** (`fetch_program_<conf>.py`)
-2. **A processor** (`process_program_<conf>.py`)
+1. **A downloader** (`fetch_program_<conf>.py`) that retrieves program data
+2. **A processor** (`process_program_<conf>.py`) that turns it into a format the app can read
+
+Once curation is complete, anyone with access to program data can use the downloader and processor to generate the app. If you would like to use AI to assist with curation, an AGENTS.md file is available. 
 
 ### Downloader
 
@@ -57,11 +59,7 @@ A downloader can use whatever approach fits your conference's source, or users c
 
 ### Processor
 
-The processor reads those raw files entirely offline and produces a single `conference_data.json` matching the schema documented in [`docs/CONFERENCE_JSON.md`](docs/CONFERENCE_JSON.md).
-
-That schema is source-agnostic, so completely different conferences with completely different processors can emit the same structure and use the same builder.
-
-This is also where conference-specific cleanup and enrichment happens, including things like:
+The processor reads those raw files entirely offline and produces a single `conference_data.json` matching the schema documented in [`docs/CONFERENCE_JSON.md`](docs/CONFERENCE_JSON.md). That schema is source-agnostic, so completely different conferences with completely different processors can emit the same structure and use the same builder. This is also where conference-specific cleanup and enrichment happens, including things like:
 
 - Recovering full author and speaker names
 - Classifying session and talk types
