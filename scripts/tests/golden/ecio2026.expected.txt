@@ -24,6 +24,7 @@ COMSOL	Comsol Multiphysics
 CRHEA	CRHEA
 CROMA	CROMA
 CSEM	CSEM
+CSEM Landquart	CSEM Landquart
 Caltech	Caltech
 Cardiff University	Cardiff
 Casmir Institute	Casmir Institute
@@ -38,6 +39,7 @@ Centre de Nanosciences et de Nanotechnologies	C2N Paris-Saclay
 Centre de Nanosciences et de Nanotechnologies, Université Paris-Saclay, CNRS	C2N Paris-Saclay
 Centre des Nanosciences et des Nanotechnologies	Centre des Nanosciences et des Nanotechnologies
 Centre for Nanosciences and Nanotechnology, CNRS, Universite Paris-Saclay, UMR 9001	Paris-Saclay
+Chalmers Tekniska Högskola	Chalmers
 Chalmers University of Technology	Chalmers
 Changzhou Smartcore Optoelectronic Limited	Changzhou Smartcore Optoelectronic
 China Academy of Science	China Academy of Science
@@ -47,6 +49,7 @@ Chongqing University	CQU
 Chungnam National University	Chungnam National
 City University of Hong Kong	CityU HK
 Coherent	Coherent
+Coherent Corp	Coherent
 Coherent Corp. Zürich	Coherent
 Colorado School of Mines	Colorado School of Mines
 Columbia University	Columbia
@@ -64,6 +67,7 @@ Department of Physics - Aristoteleio Panepistimio Thessalonikis	Thessaloniki
 Department of Physics, College of Science and Humanities, Shaqra University, Shaqra, Kingdom of Saudi Arabia	Shaqra
 Deutsches Elektronen-Synchrotron	DESY
 Dublin City University	Dublin City
+EMPA	EMPA
 EPFL	EPFL
 ETH	ETH Zürich
 ETH Zurich	ETH Zürich
@@ -88,7 +92,7 @@ Fraunhofer IAF	Fraunhofer
 Fraunhofer IZM	Fraunhofer
 Fraunhofer Institute for Applied Optics and Precision Engineering IOF	Fraunhofer
 Friedrich-Schiller-Universität Jena	Jena
-Gent University	Gent
+Gent University	Ghent
 Ghent University	Ghent
 Ghent University - imec	imec
 HPE	HPE
@@ -121,7 +125,7 @@ Institute for Complex Systems, National Research Council (ISC-CNR), Via dei Taur
 Institute for Photonic Quantum Systems	Institute for Photonic Quantum Systems
 Institute of Chemical Physics	Institute of Chemical Physics
 Institute of Southwestern Communication	Institute of Southwestern Communication
-Instituto de Investigación en Ingeniería de Aragón (I3A), Universidad de Zaragoza	Instituto de Investigación en Ingeniería de Aragón
+Instituto de Investigación en Ingeniería de Aragón (I3A), Universidad de Zaragoza	Zaragoza
 International Iberian Nanotech Lab	International Iberian Nanotech Lab
 Interuniversity Microelectronics Center	Interuniversity Microelectronics Center
 Interuniversity Microelectronics Centre	Interuniversity Microelectronics Centre
@@ -137,7 +141,7 @@ Konkuk University	Konkuk
 Korea Advanced Inst of Science & Tech	KAIST
 Korea Advanced Institute of Science and Technology	KAIST
 Koç Universitesi	Koç
-Kungliga Tekniska Hogskolan	Kungliga Tekniska Hogskolan
+Kungliga Tekniska Hogskolan	KTH
 LAAS CNRS	CNRS
 LICB	LICB
 LIGENTEC SA	Ligentec
@@ -236,6 +240,7 @@ Technical University of Denmark	DTU
 Technical University of Eindhoven	TU Eindhoven
 Technical University of Munich	TU Munich
 Technische Universiteit Eindhoven	TU Eindhoven
+Technische Universität Berlin	TU Berlin
 Technische Universität Munchen	TU Munich
 Telecom Paris, Institut Polytechnique de Paris	IP Paris
 Thales Research and Technology	Thales
@@ -257,15 +262,15 @@ UPVfab	UPVfab
 UiT The Arctic University of Norway	UiT The Arctic
 Univ. Grenoble Alpes	Grenoble Alpes
 Universidad Politécnica de Madrid	Politecnica de Madrid
-Universidad Politécnica de Valencia, Valencia, Spain	Politécnica de Valencia
-Universidad de Malaga	Malaga
+Universidad Politécnica de Valencia, Valencia, Spain	Politecnica de Valencia
+Universidad de Malaga	Málaga
 Universidad de Málaga	Málaga
 Universidade de Aveiro	Aveiro
-Universita degli Studi di Firenze	Firenze
+Universita degli Studi di Firenze	Florence
 Universitat Politècnica de València	Politecnica de Valencia
 Universitat Politècnica de València (UPV)	Politecnica de Valencia
 Universite Paris-Saclay	Paris-Saclay
-Universiteit Gent	Gent
+Universiteit Gent	Ghent
 Universiteit Twente	Twente
 Universitie Bourgogne Europe	Universitie Bourgogne Europe
 University College London	UCL
@@ -292,7 +297,7 @@ Université Bourgogne Europe, CNRS, Laboratoire Interdisciplinaire Carnot de Bou
 Université Grenoble Alpes, CEA-LETI, Minatec	Grenoble Alpes
 Université de Bordeaux	Bordeaux
 Université de Lyon, Institut des Nanotechnologies de Lyon, INSA Lyon, CNRS, UMR 5270	INSA Lyon
-Uniwersytet Warszawski	Uniwersytet Warszawski
+Uniwersytet Warszawski	Warsaw
 VLC Photonics S.L.	VLC Photonics
 Varian Semiconductor, Applied Materials	Varian Semiconductor
 Xanadu	Xanadu

@@ -97,6 +97,15 @@ def log(msg: str) -> None:
 SCRIPT_DIR = Path(__file__).resolve().parent
 DATA_DIR = SCRIPT_DIR / "data"
 INPUT_PDF = DATA_DIR / "ECIO26_DetailedSchedule.pdf"
+# Agenda-of-Sessions PDF: a clean, bordered one-table-per-day overview that
+# carries two things the wide detailed-schedule grid renders only patchily —
+# the LOCATION of every non-talk event (Registration desk, coffee/lunch foyers,
+# the Welcome Reception / Gala venues, the Student-event rooms, …) and the room
+# column each session block sits under. It's `required: no`; when present the
+# processor uses it to (a) fill the `location` of any session the detailed PDF
+# left without one and (b) add the daily logistics rows (Registration, Coffee
+# Break, Lunch) the grid omits. See `_parse_agenda_pdf` / `_load_agenda`.
+INPUT_AGENDA_PDF = DATA_DIR / "2026_ecio_agenda_of_sessions.pdf"
 INPUT_INVITED_HTML = DATA_DIR / "ECIO26_InvitedSpeakers.html"
 # Optional web-enrichment HTML pages (all under data/, all `required: no` in
 # data_requirements_ecio2026.txt). Each adds detail the detailed-schedule PDF
@@ -2762,6 +2771,199 @@ _SOCIAL_HEADING_TO_SID = {
 
 
 # =============================================================================
+# Agenda-of-Sessions PDF (one bordered table per day)
+#
+# Each day is a 3-room grid: column 0 is a "HH:MM—HH:MM" time range, then up to
+# three room columns whose header row reads "Room HG F1 | Room HG E1.1 | …".
+# A body row is one of:
+#   * a SESSION row — its room cells each hold "<CODE> • <Title>" (e.g.
+#     "M1A • Electro-Optic Modulators"); the column it sits under names its room.
+#   * an EVENT row — a single cell spanning all rooms, holding "<Name>, <Loc>"
+#     (e.g. "Welcome Reception, ETH Uhrenhalle" or "Coffee Break, Foyers in
+#     front of Session Rooms"). The name may itself carry a leading code+bullet
+#     ("T4A • Plenary Session II, HG F30 …").
+# We read the grid with pdfplumber's table extractor (the borders make this far
+# more robust than word-clustering) and return, per day: a {code -> room} map
+# and a list of structured events. Only the table SHAPE is encoded here — every
+# string of program content is read from the file at runtime.
+# =============================================================================
+_MONTHS = {
+    "january": 1, "february": 2, "march": 3, "april": 4, "may": 5, "june": 6,
+    "july": 7, "august": 8, "september": 9, "october": 10, "november": 11,
+    "december": 12,
+}
+# Time range in a left-hand agenda cell: "HH:MM—HH:MM" with an em-dash or hyphen
+# and optional surrounding spaces (the PDF is inconsistent: "13:00 —16:30",
+# "15:30—16:30").
+_AGENDA_TIME_RE = re.compile(
+    r"^(\d{1,2}):(\d{2})\s*[—–-]\s*(\d{1,2}):(\d{2})$")
+# Day header in the first cell of a table: "Monday, 15 June".
+_AGENDA_DAY_RE = re.compile(
+    r"^\s*[A-Za-z]+,\s*(\d{1,2})\s+([A-Za-z]+)\s*$")
+# A room-column header cell: "Room HG F1". The label after "Room " is the room
+# name we attach to every session/event sitting in that column.
+_AGENDA_ROOM_RE = re.compile(r"^\s*Room\s+(.+?)\s*$", re.IGNORECASE)
+# A leading "<CODE> • " on an event/session cell. The bullet is U+2022; ECIO
+# also occasionally renders it as "*". The code is the program's own session
+# label (M1A, P11, T4A, …) — format, not content.
+_AGENDA_CODE_RE = re.compile(r"^\s*([A-Za-z]{1,3}\d{1,3}[A-Za-z]?)\s*[•*]\s*(.*)$")
+# Placeholder "locations" that carry no real venue — treated as no location.
+_AGENDA_NO_LOC = {"", "location to be announced", "tba", "to be announced"}
+
+# Generic event-kind classifier. Each kind is a universal event genre (NOT
+# conference-specific content), keyed by a substring test on the lower-cased
+# event name. `new_row` kinds are daily logistics the detailed grid omits and
+# we synthesize as standalone Event sessions; the rest only *fill* the location
+# of an existing session of the same kind on the same day. `type_label` is the
+# Type tag shown for a synthesized row.
+_AGENDA_KINDS = [
+    # (kind, substrings, new_row, type_label)
+    ("registration", ("registration",),          True,  "Registration"),
+    ("coffee",       ("coffee",),                 True,  "Coffee Break"),
+    ("lunch",        ("lunch",),                  True,  "Lunch"),
+    ("opening",      ("opening",),                False, None),
+    ("closing",      ("closing",),                False, None),
+    ("plenary",      ("plenary",),                False, None),
+    ("poster",       ("poster",),                 False, None),
+    ("welcome",      ("welcome",),                False, None),
+    ("gala",         ("gala",),                   False, None),
+    ("lab",          ("lab tour", "company vis"), False, None),
+    ("tour",         ("tour", "city"),            False, None),
+    ("student",      ("student",),                False, None),
+    ("bench",        ("bench to business",),      False, None),
+    ("pizza",        ("pizza", "networking"),     False, None),
+]
+
+
+def _agenda_kind(name: str) -> tuple[str, bool, str | None] | None:
+    """Classify an event name into a generic kind. Returns (kind, new_row,
+    type_label) or None when nothing matches. The poster+coffee combo rows
+    ("Poster Session I and Coffee Break") classify as `poster`, not `coffee`,
+    because `poster` is tested before `coffee` only after we special-case it:
+    we check `poster` membership first here so a combined row never spawns a
+    spurious standalone coffee break."""
+    low = name.lower()
+    if "poster" in low:
+        return ("poster", False, None)
+    for kind, subs, new_row, label in _AGENDA_KINDS:
+        if any(s in low for s in subs):
+            return (kind, new_row, label)
+    return None
+
+
+def _agenda_split_name_loc(cell: str) -> tuple[str, str, str]:
+    """Split an agenda event/session cell into (code, name, location).
+
+    The cell shape is "[<CODE> • ]<Name>[, <Location>]". The location, when
+    present, follows the FIRST comma (event names in this grid carry no internal
+    commas). Stray punctuation the PDF emits — a doubled comma
+    ("Symposium,, HG F30") or a space before the comma ("Coffee Break ,Foyers")
+    — is normalized away. A placeholder location ("Location to be Announced")
+    becomes empty."""
+    text = re.sub(r"\s+", " ", (cell or "").replace("\n", " ")).strip()
+    code = ""
+    m = _AGENDA_CODE_RE.match(text)
+    if m:
+        code, text = m.group(1), m.group(2).strip()
+    name, loc = text, ""
+    if "," in text:
+        head, tail = text.split(",", 1)
+        name = head.strip()
+        loc = tail.strip(" ,").strip()
+    if loc.lower() in _AGENDA_NO_LOC:
+        loc = ""
+    return code, name, loc
+
+
+def _parse_agenda_pdf(path: Path) -> dict:
+    """Parse the agenda-of-sessions PDF into {rooms_by_code, events}.
+
+    `rooms_by_code` maps each session code (M1A, P11, …) to its room label.
+    `events` is a list of {day_iso, start, end, name, location, kind, new_row,
+    type_label, code} for every single-cell (all-room-spanning) event row.
+    Returns empty structures on any failure — the agenda is optional enrichment.
+    """
+    import pdfplumber
+    rooms_by_code: dict[str, str] = {}
+    events: list[dict] = []
+    year = _conference_year(CONFERENCE_NAME)
+    with pdfplumber.open(str(path)) as pdf:
+        for page in pdf.pages:
+            for table in page.extract_tables():
+                day_iso = ""
+                room_by_col: dict[int, str] = {}
+                for row in table:
+                    cells = [(c or "").replace("\n", " ").strip() for c in row]
+                    if not cells:
+                        continue
+                    first = cells[0]
+                    # Day header row: "Monday, 15 June" in the first cell.
+                    dm = _AGENDA_DAY_RE.match(first)
+                    if dm and not any(cells[1:]):
+                        day, mon = int(dm.group(1)), dm.group(2).lower()
+                        if mon in _MONTHS:
+                            day_iso = f"{year:04d}-{_MONTHS[mon]:02d}-{day:02d}"
+                        continue
+                    # Room-header row: first cell empty, the rest "Room <X>".
+                    if not first:
+                        rm = {i: _AGENDA_ROOM_RE.match(c).group(1).strip()
+                              for i, c in enumerate(cells)
+                              if _AGENDA_ROOM_RE.match(c)}
+                        if rm:
+                            room_by_col = rm
+                            continue
+                    tm = _AGENDA_TIME_RE.match(first)
+                    if not tm:
+                        continue
+                    start = f"{int(tm.group(1)):02d}:{tm.group(2)}"
+                    end = f"{int(tm.group(3)):02d}:{tm.group(4)}"
+                    filled = [(i, c) for i, c in enumerate(cells[1:], 1) if c]
+                    if len(filled) == 1:
+                        # Spanning EVENT row (single cell across the rooms).
+                        code, name, loc = _agenda_split_name_loc(filled[0][1])
+                        if not name:
+                            continue
+                        kind = _agenda_kind(name)
+                        if code and loc:
+                            rooms_by_code[code] = loc
+                        events.append({
+                            "day_iso": day_iso, "start": start, "end": end,
+                            "name": name, "location": loc, "code": code,
+                            "kind": kind[0] if kind else "",
+                            "new_row": bool(kind and kind[1]),
+                            "type_label": (kind[2] if kind else None),
+                        })
+                    else:
+                        # SESSION row: each room cell is "<CODE> • <Title>".
+                        for col, cell in filled:
+                            code, _name, _loc = _agenda_split_name_loc(cell)
+                            room = room_by_col.get(col, "")
+                            if code and room:
+                                rooms_by_code.setdefault(code, room)
+    return {"rooms_by_code": rooms_by_code, "events": events}
+
+
+def _load_agenda() -> dict:
+    """Read the agenda PDF if present; otherwise return empty structures so the
+    caller falls back to PDF/HTML-derived locations only."""
+    empty = {"rooms_by_code": {}, "events": []}
+    if not INPUT_AGENDA_PDF.exists():
+        log(f"[warn] agenda PDF not found at {INPUT_AGENDA_PDF.name}; session "
+            f"locations come from the detailed schedule only, and the daily "
+            f"Registration/Coffee/Lunch rows are not added.")
+        return empty
+    try:
+        agenda = _parse_agenda_pdf(INPUT_AGENDA_PDF)
+    except Exception as e:  # noqa: BLE001 — optional source, never fatal
+        log(f"[warn] could not parse the agenda PDF ({e}); continuing without "
+            f"its locations and logistics rows.")
+        return empty
+    log(f"[info] agenda PDF         : {len(agenda['rooms_by_code'])} session "
+        f"room(s), {len(agenda['events'])} event row(s) parsed.")
+    return agenda
+
+
+# =============================================================================
 # Optica schedule pages (per-day "Detailed View" HTML)
 #
 # These three pages mirror the full program and, unlike the detailed-schedule
@@ -3012,7 +3214,10 @@ def _load_web_enrichment() -> dict:
         "plenary": {}, "workshops": {}, "student": {},
         "industry": {}, "social": {}, "lab_tours": [],
         "optica": {"by_code": {}, "by_title": {}, "n_pres": 0},
+        "agenda": {"rooms_by_code": {}, "events": []},
     }
+
+    enrich["agenda"] = _load_agenda()
 
     if INPUT_PLENARY_HTML.exists():
         recs = _parse_plenary_html(INPUT_PLENARY_HTML.read_text(encoding="utf-8"))
@@ -3260,6 +3465,17 @@ def main() -> None:
             s_obj["presider"] = pres["presider"]
             if pres.get("presider_aff"):
                 s_obj["presider_aff"] = pres["presider_aff"]
+                # Pool the presider affiliation(s) into affiliation_sources too,
+                # so the builder's affiliation map canonicalizes them (e.g.
+                # "Technische Universität Berlin" -> "TU Berlin"). The field is a
+                # '; '-joined list of co-presider affiliations, so split it into
+                # individual strings the same way the talk-author pool stores
+                # them; without this the presider strings never reach the map and
+                # the builder leaves them in their long raw form.
+                for _paff in pres["presider_aff"].split(";"):
+                    _paff = _paff.strip()
+                    if _paff:
+                        affiliations_pool.add(_paff)
         sessions_out.append(s_obj)
 
         # ---- Collect this session's talks
@@ -3523,12 +3739,13 @@ def main() -> None:
             if new_talks:
                 talks_for_session = new_talks
 
-        # Social events: attach the website's description to the session
-        # object. No talks are synthesized — social events have no
-        # presenters in any meaningful sense; the description belongs on the
-        # session itself.
+        # Social events: attach the website's blurb to the session object as
+        # `details` (the schema's free-text session-description field, which the
+        # builder renders as a "Details" section and indexes for search). No
+        # talks are synthesized — social events have no presenters in any
+        # meaningful sense; the description belongs on the session itself.
         if sid in enrich["social"]:
-            s_obj["description"] = enrich["social"][sid]
+            s_obj["details"] = enrich["social"][sid]
 
         # Lab tours: synthesize one talk per visit option, with the visit
         # name as title and the description as abstract.
@@ -3750,6 +3967,72 @@ def main() -> None:
             talks_out.append(talk_obj)
             s_obj["talk_ids"].append(tid)
 
+
+    # ---- Agenda-of-Sessions overlay ----------------------------------------
+    # The agenda PDF is the cleanest source for two things the detailed grid
+    # renders only patchily: the LOCATION of non-talk events and the daily
+    # logistics rows (Registration / Coffee Break / Lunch). It's applied last,
+    # over the fully-built session list, and only ever ADDS information:
+    #   * it fills the `location` of any session that still lacks one (matched
+    #     by session code, then by generic event-kind within the same day) — it
+    #     never overrides a location the detailed schedule already supplied
+    #     (that PDF is the newer, authoritative source for rooms); and
+    #   * it appends the standalone Registration/Coffee/Lunch Event rows the
+    #     grid omits.
+    agenda = enrich.get("agenda") or {"rooms_by_code": {}, "events": []}
+    if agenda["rooms_by_code"] or agenda["events"]:
+        rooms_by_code = agenda["rooms_by_code"]
+        # Location-by-kind index: (day_iso, kind) -> location, for the
+        # enrichment (non-new-row) events that actually carry a venue.
+        loc_by_kind: dict[tuple[str, str], str] = {}
+        for ev in agenda["events"]:
+            if ev["kind"] and not ev["new_row"] and ev["location"]:
+                loc_by_kind.setdefault((ev["day_iso"], ev["kind"]),
+                                       ev["location"])
+
+        filled_loc = 0
+        for s in sessions_out:
+            if s.get("location"):
+                continue
+            loc = rooms_by_code.get(s["id"])
+            if not loc:
+                day_iso = s["start_ts"][:10]
+                k = _agenda_kind(s.get("title", ""))
+                if k:
+                    loc = loc_by_kind.get((day_iso, k[0]))
+            if loc:
+                s["location"] = loc
+                filled_loc += 1
+
+        # Append the daily logistics rows (Registration / Coffee Break / Lunch).
+        # These have no talks; they exist purely to tell an attendee where and
+        # when registration is open and where the coffee/lunch breaks are.
+        existing_keys = {(s["start_ts"][:10], s["start_ts"][11:16],
+                          (s.get("title") or "").lower()) for s in sessions_out}
+        added_rows = 0
+        for ev in agenda["events"]:
+            if not ev["new_row"] or not ev["day_iso"]:
+                continue
+            key = (ev["day_iso"], ev["start"], ev["name"].lower())
+            if key in existing_keys:
+                continue
+            existing_keys.add(key)
+            row = {
+                "id": f"{ev['kind'].upper()}-{ev['day_iso']}-"
+                      f"{ev['start'].replace(':', '')}",
+                "title": ev["name"],
+                "color": "rose",
+                "type": ev["type_label"] or "Event",
+                "start_ts": f"{ev['day_iso']}T{ev['start']}:00",
+                "end_ts": f"{ev['day_iso']}T{ev['end']}:00",
+                "talk_ids": [],
+            }
+            if ev["location"]:
+                row["location"] = ev["location"]
+            sessions_out.append(row)
+            added_rows += 1
+        log(f"[info] agenda overlay     : filled {filled_loc} session "
+            f"location(s); added {added_rows} logistics row(s).")
 
     # ---- Assemble final JSON ------------------------------------------------
     data = {

@@ -98,6 +98,7 @@ import html
 import json
 import re
 import sys
+import unicodedata
 import zlib
 from pathlib import Path
 
@@ -1261,6 +1262,66 @@ def _script_run(body: str, kind: str) -> str:
     return f"<{kind}>{body}</{kind}>"
 
 
+# LaTeX accent commands -> a combining diacritic we compose onto the following
+# letter (so "\'e" / "\'{e}" / "{\'e}" all become the precomposed "é"). The
+# symbol-form accents ("'", "`", "^", '"', "~", "=", ".") take a bare letter
+# argument; the letter-form ones (\v, \u, \c, \H) always need braces, so the
+# bare-argument pass deliberately excludes them to avoid eating "\value" etc.
+_LATEX_ACCENTS: dict[str, str] = {
+    "'": "́", "`": "̀", "^": "̂", '"': "̈",
+    "~": "̃", "=": "̄", ".": "̇",
+    "v": "̌", "u": "̆", "c": "̧", "H": "̋",
+}
+# Accents we accept in the BARE form ("\'e"): the common name diacritics only
+# (acute, grave, circumflex, umlaut, tilde). The dot/macron/letter-form accents
+# are deliberately excluded from the bare pass so an abbreviation-spacing "\. "
+# or a stray "\=" can't be mis-read as an accent; they still work in the
+# explicit braced forms ("\.{z}", "{\=a}").
+_ACCENT_SYMBOLS = "'`^\"~"
+
+
+def _apply_accent(acc: str, letter: str) -> str | None:
+    comb = _LATEX_ACCENTS.get(acc)
+    if not comb or len(letter) != 1 or not letter.isalpha():
+        return None
+    return unicodedata.normalize("NFC", letter + comb)
+
+
+def _convert_latex_accents(s: str) -> str:
+    r"""Turn LaTeX accent macros into precomposed Unicode letters. Handles the
+    grouped form "{\'e}" (consuming the LaTeX grouping braces), the braced-arg
+    form "\'{e}", and the bare form "\'e". A macro that doesn't resolve to a
+    known accent+letter is left untouched."""
+    if "\\" not in s:
+        return s
+    grp = "['`^\"~=.vucH]"
+    # {\'e} / {\v{c}}  -> é / č   (grouping braces consumed)
+    s = re.sub(r"\{\\(" + grp + r")\s*\{?([A-Za-z])\}?\}",
+               lambda m: _apply_accent(m.group(1), m.group(2)) or m.group(0), s)
+    # \'{e}  -> é
+    s = re.sub(r"\\(" + grp + r")\{([A-Za-z])\}",
+               lambda m: _apply_accent(m.group(1), m.group(2)) or m.group(0), s)
+    # \'e  -> é   (common name accents only; letter must follow immediately so
+    # an abbreviation-spacing "\. " can't be consumed as a dot accent)
+    s = re.sub(r"\\([" + re.escape(_ACCENT_SYMBOLS) + r"])([A-Za-z])",
+               lambda m: _apply_accent(m.group(1), m.group(2)) or m.group(0), s)
+    return s
+
+
+def _convert_textscripts(s: str) -> str:
+    r"""Render LaTeX text-mode sub/superscripts "\textsubscript{..}" and
+    "\textsuperscript{..}" as Unicode glyphs (or <sub>/<sup> when no clean glyph
+    exists). Case-insensitive: some sources emit a capitalized "\Textsubscript",
+    which would otherwise leak through verbatim."""
+    if "\\" not in s:
+        return s
+    return re.sub(
+        r"\\text(subscript|superscript)\{([^{}]*)\}",
+        lambda m: _script_run(
+            m.group(2), "sub" if m.group(1).lower() == "subscript" else "sup"),
+        s, flags=re.IGNORECASE)
+
+
 def _unescape_latex_literals(s: str) -> str:
     """Restore LaTeX backslash-escaped literals ("\\%" -> "%", "\\&" -> "&",
     ...). Must run BEFORE script/command conversion so an escaped underscore
@@ -1291,6 +1352,11 @@ def _convert_latex_scripts(s: str) -> str:
 
 def _convert_math_span(expr: str) -> str:
     expr = _unescape_latex_literals(expr)
+    # Accents and text-mode scripts must run BEFORE _convert_latex_scripts: an
+    # accent like "\^o" would otherwise be mis-read by the "^" superscript rule,
+    # and "\textsubscript{3}" is brace-delimited like a script argument.
+    expr = _convert_latex_accents(expr)
+    expr = _convert_textscripts(expr)
     expr = _convert_latex_scripts(expr)
     expr = _convert_latex_commands(expr)
     expr = expr.replace("~", "\u00a0")
@@ -1304,6 +1370,8 @@ def latex_to_unicode(text: str) -> str:
     text = re.sub(r"\$([^$]*)\$", lambda m: _convert_math_span(m.group(1)), text)
     if "\\" in text:
         text = _unescape_latex_literals(text)
+        text = _convert_latex_accents(text)
+        text = _convert_textscripts(text)
         text = _convert_latex_scripts(text)
         text = _convert_latex_commands(text)
     return text
@@ -1802,6 +1870,23 @@ def normalize_presentation(data: dict) -> None:
             t = _normalize_title_text(t)
             t = _fix_micron_units(t)
             it["title"] = _strip_trailing_periods(t)
+
+    # 1b. Render inline LaTeX residue a source occasionally leaves in a title —
+    #     e.g. "\textsubscript{3}" -> "₃" or "{\'e}" -> "é". Most titles carry no
+    #     backslash, so latex_to_unicode is a no-op for them; we only touch the
+    #     rare title that has one. Any <sub>/<sup> tag the converter emits for a
+    #     non-glyphable body is unwrapped to plain text, because titles render as
+    #     text (not HTML) in the bubble and detail-header views.
+    n_titletex = 0
+    for it in items:
+        t = it.get("title")
+        if t and ("\\" in t or "$" in t):
+            conv = re.sub(r"</?(?:sub|sup)>", "", latex_to_unicode(t))
+            if conv != t:
+                it["title"] = conv
+                n_titletex += 1
+    if n_titletex:
+        print(f"[titles] rendered inline LaTeX in {n_titletex} title(s)")
 
     # 2. ALL-CAPS recasing. Learn acronym casing from the conference's own
     #    normally-cased text (any non-shouting title, session details, and
@@ -2621,22 +2706,6 @@ body.me-resizing .bubble {
 .bubble.clr-gold    { background: var(--c-gold-bg);    border-left-color: var(--c-gold-fg); }
 .bubble.clr-orange  { background: var(--c-orange-bg);  border-left-color: var(--c-orange-fg); }
 
-/* Empty (talk-less) sessions — meals, breaks, receptions, other standalone
-   events — get a faint diagonal hatch over their colour so they read as
-   "nothing to open here" and aren't confused with expandable, talk-bearing
-   sessions. Only the background-IMAGE is set, so each event keeps its own
-   solid colour from the .clr-* rule above; the mid-grey stripes stay subtle
-   on both light and dark themes. The higher specificity (extra attribute
-   selector) lets this win over the .clr-* shorthand without touching the
-   colour. (Class is "empty-session", NOT "empty" — the latter is the
-   centered, muted empty-STATE placeholder style and must not leak in here.) */
-.bubble.empty-session[data-kind="session"] {
-  background-image: repeating-linear-gradient(
-    -45deg,
-    rgba(128, 128, 128, 0)    0,   rgba(128, 128, 128, 0)    5px,
-    rgba(128, 128, 128, .06)  5px, rgba(128, 128, 128, .06)  10px);
-}
-
 .bubble-loc {
   /* The time/location prefix at the start of the subtitle line. Same font,
      size, and color as the author byline it precedes — no pill, no monospace.
@@ -2691,6 +2760,54 @@ body.me-resizing .bubble {
 }
 .bubble[data-kind="session"] .bubble-title {
   font-size: calc(14.5px * var(--fs));
+}
+
+/* Sessions-list disclosure chevron. Sits in the gap between the colored bar and
+   the title; the gutter (anything left of the title) ALWAYS toggles the inline
+   expand/collapse — see bubblePressAction for what the rest of
+   the bubble does. Shown ONLY in the Sessions list, only for talk-bearing
+   sessions (empty events get none). The session title is indented by --chev-gap,
+   and the chevron auto-centers at gap/2 (changing the gap re-centers it) — it's a
+   centred glyph, so the >/v stay put when it rotates 90deg on .expanded. The
+   bar/text indent applies to every session in the list so their titles share one
+   left edge. */
+body[data-active-tab="sessions"][data-active-view="list"] #content .bubble[data-kind="session"] {
+  --chev-gap: 25px;
+  --chev-size: 16px;
+  padding-left: calc(var(--chev-gap) * var(--sp));
+}
+body[data-active-tab="sessions"][data-active-view="list"] #content .bubble[data-kind="session"]::before {
+  content: ""; position: absolute; top: 50%;
+  left: calc(var(--chev-gap) * var(--sp) / 2);
+  width: var(--chev-size); height: var(--chev-size);
+  transform: translate(-50%, -50%);
+  background-color: var(--muted);
+  -webkit-mask: center / var(--chev-size) var(--chev-size) no-repeat url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272.4%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M9%206l6%206-6%206%27/%3E%3C/svg%3E");
+          mask: center / var(--chev-size) var(--chev-size) no-repeat url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20viewBox%3D%270%200%2024%2024%27%20fill%3D%27none%27%20stroke%3D%27black%27%20stroke-width%3D%272.4%27%20stroke-linecap%3D%27round%27%20stroke-linejoin%3D%27round%27%3E%3Cpath%20d%3D%27M9%206l6%206-6%206%27/%3E%3C/svg%3E");
+  opacity: .8; pointer-events: none;
+  transition: transform .18s ease;
+}
+/* Unexpandable (talk-less) sessions show a small leaf-dot in place of the
+   disclosure chevron — a positive "this is a leaf, nothing to open here" marker
+   rather than a dimmed, still-chevron-shaped control that invites a tap and then
+   disappoints. It reuses the chevron's centered gutter slot, so every title in
+   the list keeps the same left edge. (A tap flashes a "no talks" notice; a
+   long-press opens the session detail — see bubblePressAction.) */
+body[data-active-tab="sessions"][data-active-view="list"] #content .bubble[data-kind="session"].empty-session::before {
+  width: calc(5px * var(--sp)); height: calc(5px * var(--sp));
+  border-radius: 50%;
+  -webkit-mask: none; mask: none;
+  background-color: var(--muted);
+  opacity: .55;
+}
+body[data-active-tab="sessions"][data-active-view="list"] #content .bubble[data-kind="session"].expanded::before {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+/* Static gesture hint at the bottom of the Sessions list: a tap expands a
+   session inline, a hold opens its standalone detail (see bubblePressAction). */
+.sess-list-hint {
+  text-align: center; margin: 22px auto 16px; padding: 0 16px;
+  font-size: calc(12px * var(--fs)); color: var(--muted); opacity: .8;
 }
 
 /* Talks are lighter: a thinner 3px accent bar. The extra 3px of left padding
@@ -3310,20 +3427,6 @@ body[data-active-view="session-detail"] .detail-head {
 #scroll-indicator .sep {
   color: var(--muted);
   margin: 0 8px;
-}
-/* Right-aligned usage hint on the Sessions list indicator. Pushed to the far
-   right with margin-left:auto; faint and smaller so it reads as a quiet hint
-   next to the date/time label. Hidden on very narrow viewports where it would
-   crowd the date/time. */
-#scroll-indicator .ind-hint {
-  margin-left: auto;
-  font-size: calc(11px * var(--fs)); font-weight: 600;
-  color: var(--muted);
-  opacity: .8;
-  white-space: nowrap;
-}
-@media (max-width: 360px) {
-  #scroll-indicator .ind-hint { display: none; }
 }
 body.has-indicator #scroll-indicator { display: flex; }
 
@@ -4133,6 +4236,13 @@ function saveState() {
   catch (_) {}
 }
 
+// Whether this is the very first load on this device (nothing persisted yet) —
+// captured BEFORE loadState so the single-track auto-expand below can tell a
+// brand-new install from a returning one. loadState never writes, so the key is
+// still absent here on a genuine first load.
+let isFirstLoad = false;
+try { isFirstLoad = !localStorage.getItem(STORAGE_KEY); } catch (_) { isFirstLoad = false; }
+
 let state = loadState();
 
 /* indexes */
@@ -4183,6 +4293,44 @@ if (Array.isArray(state.expandedSessions) && state.expandedSessions.length) {
     state.expandedSessions = kept;
     saveState();
   }
+}
+
+// True when the program has PARALLEL tracks — any two sessions whose times
+// overlap, or that start at the same moment. A conference with none of these is
+// single-track (one linear sequence of sessions). Two checks so it's robust even
+// when sessions carry only a start time:
+//   1. duplicate start_ts  -> two sessions begin together = parallel.
+//   2. interval overlap     -> sorted by start, any session begins before the
+//      previous one ends. (Comparing each session to its immediate predecessor
+//      suffices: if a non-adjacent pair overlaps, an adjacent pair does too.)
+// Back-to-back sessions (one ends exactly as the next begins) are NOT parallel.
+function hasParallelSessions() {
+  const starts = new Set();
+  for (const s of DATA.sessions) {
+    if (s.start_ts == null) continue;
+    const k = String(s.start_ts);
+    if (starts.has(k)) return true;
+    starts.add(k);
+  }
+  const ivals = DATA.sessions
+    .filter(s => s.start_ts != null && s.end_ts != null)
+    .map(s => [+s.start_ts, +s.end_ts])
+    .filter(([a, b]) => isFinite(a) && isFinite(b))
+    .sort((p, q) => p[0] - q[0]);
+  for (let i = 1; i < ivals.length; i++) {
+    if (ivals[i][0] < ivals[i - 1][1]) return true;
+  }
+  return false;
+}
+
+// First launch only: a SINGLE-TRACK conference (no parallel sessions) opens with
+// every session expanded — there are no competing tracks to choose between, so
+// the whole linear program reads best fully unfolded. Multi-track conferences
+// keep the default collapsed list. This fires only when nothing is persisted yet
+// (isFirstLoad), so once the user expands/collapses anything their choice sticks;
+// returning visitors always keep their saved expansion state.
+if (isFirstLoad && !hasParallelSessions()) {
+  state.expandedSessions = DATA.sessions.map(s => s.id).filter(isExpandableSession);
 }
 
 const scheduledIds = () => new Set(state.schedule);
@@ -4686,6 +4834,34 @@ function partialSessionIds() {
   return out;
 }
 
+/* Resolve a press on a bubble to "expand" or "detail".
+     gutter — was the press left of the title (the chevron zone)?
+     isLong — a long-press / hold (vs a quick tap)?
+   The Sessions-list gesture is FIXED (no per-device setting): a quick tap on a
+   talk-bearing session expands it inline, a hold opens its standalone detail —
+   the gesture the footer hint spells out. The chevron GUTTER (anything left of
+   the title) expands on either press. Talks — and sessions shown outside the
+   Sessions list, where inline expansion isn't offered (`expandable` is false) —
+   always open their detail. An EMPTY (talk-less) session in the list has nothing
+   to expand, so a quick press flashes a "no talks" notice ("notalks") and a
+   long-press opens its detail — matching the leaf-dot it shows and the hint in
+   the notice. Applies uniformly to mouse/touch and keyboard. */
+function bubblePressAction(isTalk, expandable, emptySession, gutter, isLong) {
+  if (isTalk || !expandable) return "detail";                       // talk, or not in the list
+  if (emptySession) return isLong ? "detail" : "notalks";           // leaf: tap = notice, hold = detail
+  if (gutter) return "expand";                                      // chevron gutter always expands
+  return isLong ? "detail" : "expand";                              // body: tap = expand, hold = detail
+}
+
+/* Flash the transient "this session has no talks" notice fired by a quick press
+   on an unexpandable (leaf-dot) session — see bubblePressAction. Names the
+   session's type and points at the long-press that does reach its detail. */
+function flashNoTalksNotice(id) {
+  const s = sessionMap[id];
+  const label = s ? labelForType(s.color, "sessions") : "This session";
+  flashToast(`Session has no talks. Long-press for details.`);
+}
+
 function makeBubble(item, opts = {}) {
   const isTalk = !!item.session_id;
   const added  = state.schedule.includes(item.id);
@@ -4737,7 +4913,12 @@ function makeBubble(item, opts = {}) {
       // small circle and land on the bubble. The +/- circle itself has its
       // own handler (stopPropagation), so this only catches the surround.
       if (inAddZone(e.clientX, e.clientY)) { toggleScheduled(item.id); return; }
-      if (expandable) { toggleSessionExpanded(item.id); return; }
+      // A quick press: the chevron gutter and the body both expand (a hold opens
+      // detail instead — see bubblePressAction).
+      const act = bubblePressAction(isTalk, expandable, emptySession,
+                                    inExpandZone(e.clientX), false);
+      if (act === "expand")  { toggleSessionExpanded(item.id); return; }
+      if (act === "notalks") { flashNoTalksNotice(item.id); return; }
       navigate(isTalk ? `talk:${item.id}` : `session:${item.id}`);
     },
   });
@@ -4757,6 +4938,15 @@ function makeBubble(item, opts = {}) {
         && y >= br.top  - pad && y <= br.bottom + pad;
   }
 
+  // The "expand" gutter: the strip to the LEFT of the title text (the colored
+  // bar plus the chevron). A click here toggles the inline expand/collapse under
+  // the chevron model. Measured live so it tracks --sp scaling and title wrap.
+  function inExpandZone(x) {
+    const t = wrap.querySelector(".bubble-title");
+    if (!t) return false;
+    return x < t.getBoundingClientRect().left;
+  }
+
   // Press-and-hold opens a standalone detail view. For an expandable session
   // bubble a quick tap expands it inline while a hold opens Session detail;
   // for a talk both tap AND hold open Talk detail (the hold path mainly
@@ -4768,7 +4958,7 @@ function makeBubble(item, opts = {}) {
   // updateScrollIndicatorIn), not per-bubble.
   if (expandable || isTalk) {
     const detailView = isTalk ? `talk:${item.id}` : `session:${item.id}`;
-    let lpTimer = null, sx = 0, sy = 0;
+    let lpTimer = null, sx = 0, sy = 0, pdGutter = false;
     const LP_MS = 500, MOVE_TOL = 10;
 
     const cancel = () => {
@@ -4777,18 +4967,34 @@ function makeBubble(item, opts = {}) {
     wrap.addEventListener("pointerdown", (e) => {
       // Ignore the +/- schedule button (it has its own handler) and the
       // forgiving zone around it — a press there should toggle the schedule on
-      // release (via onclick), not start a long-press into the detail view.
+      // release (via onclick), not start a long-press.
       if (e.target.closest(".schedule-btn")) return;
       if (inAddZone(e.clientX, e.clientY)) return;
       // Ctrl/Cmd(+Shift) is a select-only gesture (see onclick), not a press.
       if (e.ctrlKey || e.metaKey) return;
       sx = e.clientX; sy = e.clientY;
+      // Capture the gutter hit at PRESS time, robust to the bubble contracting
+      // before release (a click's own x can otherwise land off the shrunk bubble).
+      pdGutter = inExpandZone(e.clientX);
+      // Capture the pointer to THIS bubble — the same fix the +/- circles use
+      // (see the delegated pointerdown handler near the bottom). The bubble
+      // shrinks on :active (scale about its center), which slides its edges
+      // inward; a press that landed near an edge — e.g. a chevron-gutter tap —
+      // can end up just outside the contracted bubble, so pointerup fires off it
+      // and no click is synthesized (the tap is "missed"). Capturing routes the
+      // pointer's events and the click to this bubble regardless of where the
+      // shrink moved it. Released automatically on pointerup/cancel; a scroll
+      // raises pointercancel, which frees it and cancels the long-press below.
+      try { wrap.setPointerCapture(e.pointerId); } catch (_) {}
       wrap._lpFired = false;
       cancel();
       lpTimer = setTimeout(() => {
         lpTimer = null;
-        wrap._lpFired = true;        // suppress the click that follows
-        navigate(detailView);
+        wrap._lpFired = true;        // suppress the click that follows on release
+        const act = bubblePressAction(isTalk, expandable, emptySession, pdGutter, true);
+        if (act === "expand") toggleSessionExpanded(item.id);
+        else if (act === "notalks") flashNoTalksNotice(item.id);
+        else navigate(detailView);
       }, LP_MS);
     });
     wrap.addEventListener("pointermove", (e) => {
@@ -4851,7 +5057,13 @@ function makeBubble(item, opts = {}) {
       (hasByline ? " · " : "")   // same plain separator the byline uses internally
     : "";
   const subHTML = locPrefix + (subBody || "");
-  if (subHTML) {
+  // A SESSION with nothing under its title — no location chip AND no presider
+  // byline — skips the blank "&nbsp;" placeholder row, so its lone title sits
+  // vertically centered in the normal-height bubble (justify-content:center)
+  // rather than riding high with an empty line beneath it. Talks keep their
+  // placeholder so their row heights stay uniform.
+  const sessionNoDetail = !isTalk && !chipText && !hasByline;
+  if (!sessionNoDetail && subHTML) {
     const subEl = el("div", { class: "bubble-sub", html: subHTML });
     wrap.appendChild(subEl);
 
@@ -5711,9 +5923,17 @@ function renderTimeGrouped(container, items, opts = {}) {
 
 function renderSessionsList(c) {
   renderTimeGrouped(c, DATA.sessions, { expandable: true });
+  appendSessionsListHint(c);
 }
 function renderTalksList(c) {
   renderTimeGrouped(c, DATA.talks);
+}
+
+/* Static footer note at the bottom of the Sessions list spelling out the
+   (now fixed) tap/hold gesture — see bubblePressAction. */
+function appendSessionsListHint(c) {
+  c.appendChild(el("div", { class: "sess-list-hint" },
+    "Long-press sessions to see details"));
 }
 
 /* =============================================================== */
@@ -6806,7 +7026,7 @@ function renderMe(c) {
     el("br"),
     el("a", {
       class: "me-attribution-link",
-      href: "https://burghoff.org",
+      href: "https://ece.utexas.edu/people/faculty/david-burghoff",
       target: "_blank",
       rel: "noopener noreferrer",
     }, "David Burghoff, UT Austin"),
@@ -8390,10 +8610,6 @@ function updateScrollIndicatorIn(ind, scope, bodyCls) {
     if (dateText) p.push(`<span class="date">${esc(dateText)}</span>`);
     if (curTime)  p.push(`<span class="time">${esc(curTime)}</span>`);
     let h = p.join('<span class="sep">·</span>');
-    if (ind.id === "scroll-indicator"
-        && state.activeTab === "sessions" && currentTopView() === "list") {
-      h += `<span class="ind-hint">Hold for detail</span>`;
-    }
     return h;
   };
   const wraps = () => ind.scrollHeight > ind.clientHeight + 1;
@@ -10262,11 +10478,22 @@ document.addEventListener("keydown", (e) => {
       // standalone detail — so a held Space/Enter on a session reaches Session
       // detail, not the inline expand a tap does. Mirrors makeBubble's long-press.
       const id = itemId(cur);
-      const detailView = cur.dataset.kind === "talk" ? `talk:${id}` : `session:${id}`;
+      const kind = cur.dataset.kind;
+      const detailView = kind === "talk" ? `talk:${id}` : `session:${id}`;
+      const exp = kind !== "talk" && isExpandableSession(id);
+      const empty = kind !== "talk" && !exp;
       if (_spaceHold) clearTimeout(_spaceHold.timer);
-      _spaceHold = { id, detailView, fired: false, timer: 0 };
+      _spaceHold = { id, kind, detailView, exp, empty, fired: false, timer: 0 };
       _spaceHold.timer = setTimeout(() => {
-        if (_spaceHold) { _spaceHold.fired = true; navigate(_spaceHold.detailView); }
+        if (!_spaceHold) return;
+        _spaceHold.fired = true;
+        // Keyboard has no position → gutter=false; a hold opens detail
+        // (see bubblePressAction).
+        const act = bubblePressAction(_spaceHold.kind === "talk", _spaceHold.exp,
+                                      _spaceHold.empty, false, true);
+        if (act === "expand") toggleSessionExpanded(_spaceHold.id);
+        else if (act === "notalks") flashNoTalksNotice(_spaceHold.id);
+        else navigate(_spaceHold.detailView);
       }, _KEY_LP_MS);
       return;
     }
@@ -10322,10 +10549,12 @@ document.addEventListener("keyup", (e) => {
   const hold = _spaceHold;
   clearTimeout(hold.timer);
   _spaceHold = null;
-  if (hold.fired) return;                  // long-press already opened the detail
-  const elc = navItems().find(x =>
-    x.classList.contains("bubble") && itemId(x) === hold.id);
-  if (elc) elc.click();
+  if (hold.fired) return;                  // the hold already acted
+  // A quick tap: gutter=false → expands a session (see bubblePressAction).
+  const act = bubblePressAction(hold.kind === "talk", hold.exp, hold.empty, false, false);
+  if (act === "expand") toggleSessionExpanded(hold.id);
+  else if (act === "notalks") flashNoTalksNotice(hold.id);
+  else navigate(hold.detailView);
 });
 
 // Route the in-app Back button through history so it and the device/browser

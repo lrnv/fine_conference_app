@@ -539,10 +539,10 @@ Ctr. for Free Electron Laser Science, Deutsches Elektronen-Synchrotron (Germany)
 Ctr. for Global Reproductive Health, Duke Global Institute (United States)	Ctr for Global Reproductive Health
 Ctr. for Intelligent Optics (CIO)	CIO
 Ctr. for Label-free Imaging and Multiscale Biophotonics, Beckman Institute for Advanced Science and Technology (United States)	UIUC
-Ctr. for Microsystems Technology, Univ. Gent (Belgium)	Ctr for Microsystems Technology
+Ctr. for Microsystems Technology, Univ. Gent (Belgium)	Ghent
 Ctr. for Molecular Spectroscopy and Dynamics, Institute for Basic Science (Korea, Republic of)	Ctr for Molecular Spectroscopy and Dynamics
 Ctr. for Nano Science and Engineering (CeNSE) (India)	Ctr for Nano Science and Engineering
-Ctr. for Nano-and Biophotonics, Univ. Gent (Belgium)	Ctr for Nano-and Biophotonics
+Ctr. for Nano-and Biophotonics, Univ. Gent (Belgium)	Ghent
 Ctr. for Nanoscience and Nanotechnology (France)	Ctr for Nanoscience and Nanotechnology
 Ctr. for Perceptual and Interactive Intelligence (Hong Kong, China)	Ctr for Perceptual and Interactive Intelligence
 Ctr. for Physical Sciences and Technology (Lithuania)	Ctr for Physical Sciences and Technology
@@ -674,7 +674,7 @@ Ecole Nationale Supérieure de Chimie de Paris, Univ. PSL (France)	Ecole Nationa
 Ecole Normale Supérieure (France)	ENS Paris
 Ecole Normale Supérieure Paris-Saclay (France)	Paris-Saclay
 Ecole Normale Supérieure de Lyon (France)	ENS Paris
-Ecole Polytechnique (France)	Ecole Polytechnique
+Ecole Polytechnique (France)	École Polytechnique
 Ecole Polytechnique Fédérale de Lausanne (Switzerland)	EPFL
 Ecole Polytechnique, CEA (France)	IP Paris
 Ecole Supérieure de Physique et de Chimie Industrielles de la Ville de Paris (France)	ESPCI Paris
@@ -723,7 +723,7 @@ Everest Imaging, LLC (United States)	Everest Imaging
 Ewha Womans Univ. (Korea, Republic of)	Ewha Womans
 Exail SAS (France)	Exail
 Excelitas Technologies Corp. (United States)	Excelitas Technologies
-Experimental Surgery Lab, Univ. Gent (Belgium)	Experimental Surgery Lab
+Experimental Surgery Lab, Univ. Gent (Belgium)	Ghent
 Extreme Light Infrastructure Nuclear Physics (Romania)	Extreme Light Infrastructure Nuclear Physics
 Exzellenzcluster PhoenixD, Leibniz Univ. Hannover (Germany)	Leibniz Hannover
 F. Łukaszczyk Memorial Hospital (Poland)	F Łukaszczyk Memorial Hospital
@@ -1433,7 +1433,7 @@ L3Harris Technologies (United States)	L3Harris Technologies
 L3Harris Technologies Inc., Kigre (United States)	L3Harris Technologies
 L3Harris Technologies, Inc. (United States)	L3Harris Technologies
 LENS - Lab. Europeo di Spettroscopie Non-Lineari (Italy)	LENS - Lab Europeo di Spettroscopie Non-Lineari
-LENS - Lab. Europeo di Spettroscopie Non-Lineari, Univ. degli Studi di Firenze (Italy)	LENS - Lab Europeo di Spettroscopie Non-Lineari
+LENS - Lab. Europeo di Spettroscopie Non-Lineari, Univ. degli Studi di Firenze (Italy)	Florence
 LEO Space Photonics (Greece)	LEO Space Photonics
 LEUKOS (France)	LEUKOS
 LG Electronics Inc. (Korea, Republic of)	LG Electronics
@@ -2737,7 +2737,7 @@ Univ. Federal do Espírito Santo (Brazil)	Federal do Espírito Santo
 Univ. Federal do Paraná (Brazil)	Federal do Paraná
 Univ. Federal do Piauí (Brazil)	Federal do Piauí
 Univ. Federal do Vale do São Francisco (Brazil)	Cisco
-Univ. Gent (Belgium)	Gent
+Univ. Gent (Belgium)	Ghent
 Univ. Grenoble Alpes (France)	Grenoble Alpes
 Univ. Grenoble Alpes, CEA (France)	Grenoble Alpes
 Univ. Grenoble Alpes, CEA-LETI, MINATEC (France)	Grenoble Alpes
@@ -2841,7 +2841,7 @@ Univ. degli Studi di Brescia (Italy)	Brescia
 Univ. degli Studi di Cagliari (Italy)	Cagliari
 Univ. degli Studi di Camerino (Italy)	Camerino
 Univ. degli Studi di Catania (Italy)	Catania
-Univ. degli Studi di Firenze (Italy)	Firenze
+Univ. degli Studi di Firenze (Italy)	Florence
 Univ. degli Studi di Genova (Italy)	Genova
 Univ. degli Studi di Milano (Italy)	Milano
 Univ. degli Studi di Milano Bicocca (Italy)	Milano Bicocca

@@ -3736,8 +3736,8 @@ Universite Laval	Laval
 Universite Marie et Louis Pasteur and CNRS	UMLP
 Universite Marie et Louis Pasteur and CNRS, Besancon, France	UMLP
 Universite Paris Cité	Paris Cité
-Universiteit Gent	Gent
-Universiteit Gent, Ghent, Belgium	Gent
+Universiteit Gent	Ghent
+Universiteit Gent, Ghent, Belgium	Ghent
 Universitry College London	UCL
 University	University
 University Alliance Ruhr	Alliance Ruhr

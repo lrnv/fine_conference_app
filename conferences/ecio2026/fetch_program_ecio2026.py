@@ -35,6 +35,19 @@ There is no planner / Excel / abstract-book export. The two PDFs are:
     ECIO26_Concise.pdf            one-page program overview (session blocks
                                   only, no per-talk detail).
 
+We also save the Agenda-of-Sessions PDF,
+
+    2026_ecio_agenda_of_sessions.pdf   a clean one-table-per-day overview that,
+                                  unlike the detailed grid, prints the LOCATION
+                                  of every non-talk event (registration desk,
+                                  coffee/lunch foyers, the reception/gala
+                                  venues, the student-event rooms) and the daily
+                                  Registration/Coffee/Lunch rows.
+
+This file is not linked from the CMS programme page; it is served from
+Optica's media CDN at a fixed path, so we fetch it directly (and treat it as
+optional — its CDN path can rotate).
+
 We also save a third artifact, the invited-speakers HTML page,
 
     ECIO26_InvitedSpeakers.html   the public list of invited speakers laid out
@@ -122,6 +135,23 @@ ARTIFACTS = [
             re.IGNORECASE,
         ),
         "desc": "concise program overview",
+    },
+    {
+        "name": "2026_ecio_agenda_of_sessions.pdf",
+        # Agenda of Sessions: a clean one-table-per-day overview that, unlike the
+        # detailed schedule, prints the LOCATION of every non-talk event
+        # (registration desk, coffee/lunch foyers, the reception/gala venues,
+        # the student-event rooms) and the daily Registration/Coffee/Lunch rows.
+        # It is NOT linked from the CMS programme page; it is served from
+        # Optica's media CDN at a fixed path. `required: no` — the processor
+        # falls back to detailed-schedule locations when it's absent.
+        "url": (
+            "https://opticaorg-dev-cac7d2csctagc8bm.z01.azurefd.net/$web/"
+            "optica/media/files/events/ecio/2026/"
+            "2026_ecio_agenda_of_sessions.pdf"
+        ),
+        "desc": "agenda of sessions (locations + logistics)",
+        "optional": True,
     },
     {
         "name": "ECIO26_InvitedSpeakers.html",
@@ -613,8 +643,15 @@ def main() -> None:
         try:
             body = _fetch_bytes(url)
         except urllib.error.URLError as e:
-            print(f"[warn]   download failed: {e}")
-            failed.append(art["name"])
+            # Optional artifacts (e.g. the agenda PDF, served from a CDN path
+            # that can rotate) only warn softly and don't count as a retrieval
+            # failure — the processor falls back gracefully without them.
+            if art.get("optional"):
+                print(f"[note]   optional {art['name']} unavailable ({e}); "
+                      f"skipping — the processor will fall back.")
+            else:
+                print(f"[warn]   download failed: {e}")
+                failed.append(art["name"])
             continue
         target.write_bytes(body)
         size_kb = target.stat().st_size / 1024

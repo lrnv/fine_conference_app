@@ -51,6 +51,27 @@ manual: Open https://www.ecio-conference.org/programme-26/ and click the
   but the date suffix changes when the organisers re-issue the overview, so
   always re-derive the link from the programme page rather than hard-coding it.)
 
+[file: 2026_ecio_agenda_of_sessions.pdf]
+required: no
+produced_by: fetch
+description: Agenda-of-Sessions PDF — a clean one-table-per-day overview that,
+  unlike the detailed schedule, prints the LOCATION of every non-talk event
+  (the registration desk, the coffee/lunch foyers, the Welcome Reception and
+  Gala venues, the student-event rooms) and the room column each session block
+  sits under. The processor uses it to fill the location of any session the
+  detailed schedule left without one, and to add the daily Registration /
+  Coffee Break / Lunch rows the wide grid omits. Optional: missing it just
+  reverts session locations to detailed-schedule rooms and drops those
+  logistics rows.
+manual: This PDF is NOT linked from the CMS programme page; it is served
+  from Optica's media CDN. The current direct URL is
+  https://opticaorg-dev-cac7d2csctagc8bm.z01.azurefd.net/$web/optica/media/files/events/ecio/2026/2026_ecio_agenda_of_sessions.pdf
+  — download it and save into this folder's data/ subdirectory as exactly
+  2026_ecio_agenda_of_sessions.pdf . If that CDN path has rotated, look for an
+  "Agenda of Sessions" link on the Optica ECIO event page
+  (https://www.optica.org/events/topical_meetings/european_conference_on_integrated_optics_(ecio)/)
+  and save whatever it points to under the same filename.
+
 [file: ECIO26_InvitedSpeakers.html]
 required: yes
 produced_by: fetch

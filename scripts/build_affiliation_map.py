@@ -1015,7 +1015,12 @@ _ANCHORS_SRC: list = [
     # Calabria" are the same institution — fold both to one short.
     (['universita della calabria', 'university of calabria'], 'Calabria'),
     (['universita di trento', 'university of trento'], 'University of Trento'),
-    (['university of florence', 'universita di firenze', 'university, florence'], 'Florence'),
+    # Florence. Cover the English name and the Italian "Università di Firenze"
+    # plus the "Università degli Studi di Firenze" long form (the "degli studi di
+    # firenze" needle is robust to the "Univ." abbreviation, which normalize()
+    # folds to "university degli studi di firenze").
+    (['university of florence', 'universita di firenze',
+      'degli studi di firenze', 'university, florence'], 'Florence'),
     ([
         'university of pavia', 'universita degli studi di pavia',
         'universita di pavia', 'universita pavia',
@@ -1055,6 +1060,13 @@ _ANCHORS_SRC: list = [
     # Spanish "Universidad de Almería" and English "University of Almería" are
     # the same institution — fold both to one short.
     (['universidad de almeria', 'university of almeria'], 'Almería'),
+    # University of Zaragoza. The Aragón Institute of Engineering Research (I3A)
+    # is a research institute hosted there; its strings carry "Universidad de
+    # Zaragoza" after the institute name, but the comma-based fallback would keep
+    # the leading institute segment, so anchor the university (Spanish + English)
+    # and the institute name itself to the bare place name.
+    (['universidad de zaragoza', 'university of zaragoza',
+      'investigacion en ingenieria de aragon'], 'Zaragoza'),
     ('eurecat', 'Eurecat'),
     ('donostia international physics center', 'Donostia International Physics Center'),
     ('radiantis', 'Radiantis'),
@@ -1085,7 +1097,13 @@ _ANCHORS_SRC: list = [
     ('universite libre de bruxelles', 'ULB'),
     ('vrije universiteit brussel', 'VUB'),
     ('ulb,', 'ULB'),
-    (['ghent university', 'ugent'], 'Ghent'),
+    # Ghent University, incl. the Dutch name ("Universiteit Gent"), the
+    # "Gent University" half-translation, and the abbreviated "Univ. Gent" form
+    # (which normalize() folds to "university gent"), all map to the English
+    # short. (The University Hospital "UZ Gent" is a separate body and keeps its
+    # own label — it carries neither "university" nor "ghent".)
+    (['ghent university', 'ugent', 'universiteit gent', 'gent university',
+      'university gent'], 'Ghent'),
     ('intec,', 'INTEC'),
 
     # ---- Nordics -----------------------------------------------------------
@@ -1099,7 +1117,9 @@ _ANCHORS_SRC: list = [
     ('uv medico', 'UV Medico'),
     (['niels bohr institute', 'university of copenhagen'], 'Copenhagen'),
     ('sparrow quantum', 'Sparrow Quantum ApS'),
-    (['royal institute of technology', 'kth royal institute', 'kth,'], 'KTH'),
+    # KTH, incl. the Swedish name "Kungliga Tekniska Högskolan" (diacritics
+    # already folded by normalize()).
+    (['royal institute of technology', 'kth royal institute', 'kth,', 'kungliga tekniska'], 'KTH'),
     ('chalmers', 'Chalmers'),
     ('linkoping', 'Linköping'),
     ('rise research institutes', 'RISE Research Institutes of Sweden'),
@@ -1138,7 +1158,8 @@ _ANCHORS_SRC: list = [
     ('palacky university', 'Palacky University'),
     ('alexander dubcek', 'Alexander Dubček University of Trenčín'),
     ('jozef stefan', 'Jozef Stefan Institute'),
-    ('university of warsaw', 'Warsaw U'),
+    # University of Warsaw, incl. the Polish name "Uniwersytet Warszawski".
+    (['university of warsaw', 'uniwersytet warszawski'], 'Warsaw U'),
     ('warsaw university of technology', 'Warsaw UT'),
     # Łukasiewicz Institute of Microelectronics and Photonics (IMiF, Poland).
     # 2025 strings appear as "Łukasiewicz Research Network, Institute of
@@ -2597,6 +2618,71 @@ def _strip_trailing_country(raw: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Cross-string consolidation of diacritic-only spelling variants.
+#
+# The same institution often appears under spellings that differ ONLY by
+# accents — typically because it's written in different languages/orthographies
+# (Spanish "Universidad de Málaga" vs the ASCII "Universidad de Malaga"; Catalan
+# "Universitat Politècnica de València" vs Spanish "Universidad Politécnica de
+# Valencia"; French "École Polytechnique" vs "Ecole Polytechnique"). Each
+# spelling shortens consistently, but to a DIFFERENT label ("Málaga" vs
+# "Malaga"), so one institution ends up with two chips.
+#
+# This pass folds those together: shorts that become byte-identical once their
+# diacritics are stripped (CASE PRESERVED) are treated as one institution and
+# all remapped to a single winner spelling. Case is deliberately kept in the
+# fold key so this NEVER merges labels that differ by case alone — those can be
+# genuinely different institutions (e.g. the German acronym "IOM" vs the
+# Portuguese company "Iom"), which we must not conflate.
+# ---------------------------------------------------------------------------
+
+def _strip_accents(s: str) -> str:
+    return ''.join(c for c in unicodedata.normalize('NFD', s)
+                   if not unicodedata.combining(c))
+
+
+# Every short label any curated anchor / late anchor / raw override can emit.
+# A spelling in this set is an intentional, hand-chosen canonical form, so when
+# an accent-only group contains one it wins over any fallback-derived spelling
+# (protects deliberately-accented labels like "Almería", "Göttingen", "Münster"
+# from being de-accented by a colliding fallback string).
+_CURATED_SHORTS = ({s for _, s in ANCHORS}
+                   | {s for _, s in LATE_ANCHORS})
+
+
+def _consolidate_accent_variants(mapping: dict[str, str]) -> dict[str, str]:
+    """Remap shorts that differ only by diacritics onto one winner spelling.
+
+    Winner per group, by descending preference:
+      1. a curated (anchor/override) spelling — the intended canonical form;
+      2. the spelling the most raw strings already resolve to (data consensus);
+      3. the accented spelling (the native, more-correct orthography);
+      4. the longer spelling, then alphabetical — purely for determinism.
+    No-op for any conference whose shorts have no accent-only collisions, so
+    maps without such variants are byte-for-byte unchanged.
+    """
+    from collections import Counter, defaultdict
+    counts = Counter(mapping.values())            # raw strings per short label
+    curated = _CURATED_SHORTS | set(RAW_OVERRIDES.values())
+    groups: dict[str, set] = defaultdict(set)
+    for short in set(mapping.values()):
+        groups[_strip_accents(short)].add(short)
+
+    winner_of: dict[str, str] = {}
+    for variants in groups.values():
+        if len(variants) < 2:
+            continue
+        winner = max(variants, key=lambda s: (
+            s in curated, counts[s], s != _strip_accents(s), len(s), s))
+        for v in variants:
+            if v != winner:
+                winner_of[v] = winner
+    if not winner_of:
+        return mapping
+    return {raw: winner_of.get(short, short) for raw, short in mapping.items()}
+
+
+# ---------------------------------------------------------------------------
 # Driver
 # ---------------------------------------------------------------------------
 
@@ -2632,12 +2718,22 @@ def build(data: dict | list, out_txt: Path | None = None) -> dict[str, str]:
 
     print(f'[affil]   canonicalizing {len(affils):,} unique raw strings…')
     mapping = {k: canonicalize(k) for k in sorted(affils)}
-    n_short = len(set(mapping.values()))
 
     # How many of the raw strings landed in the curated anchors/overrides
-    # vs. fell all the way through to fallback_shorten? Useful for spotting
-    # when a large new batch of inputs is bypassing the curated patterns.
+    # vs. fell all the way through to fallback_shorten? Computed BEFORE the
+    # accent-consolidation below so the stat reflects the canonicalizer itself.
     n_fallback = sum(1 for k, v in mapping.items() if v == fallback_shorten(k))
+
+    # Fold together shorts that differ only by diacritics (the same institution
+    # written in different languages/orthographies), so one institution renders
+    # one chip rather than several accent-variant chips.
+    before = dict(mapping)
+    mapping = _consolidate_accent_variants(mapping)
+    n_merged = sum(1 for k in mapping if mapping[k] != before[k])
+    if n_merged:
+        print(f'[affil]   consolidated {n_merged} affiliation(s) onto an '
+              f'accent-variant canonical spelling')
+    n_short = len(set(mapping.values()))
     n_anchored = len(mapping) - n_fallback
     print(f'[affil]   {n_anchored:,} matched a curated anchor; '
           f'{n_fallback:,} used the fallback shortener')

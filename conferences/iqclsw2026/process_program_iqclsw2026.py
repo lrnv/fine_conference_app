@@ -123,6 +123,21 @@ _BLOCK_TAGS = {
     "figure", "figcaption", "blockquote", "br",
 }
 
+# Sentinel injected by _html_to_text immediately before an underlined text run.
+# The source program marks the PRESENTING author by underlining their name
+# (`<span style="text-decoration: underline">`), so this sentinel is how that
+# signal survives the HTML->text flattening: the author parser uses it to set
+# speaker_pos, then strips it. A C0 control char so it can never collide with
+# real program text and is trivially removed everywhere a name/title is cleaned.
+_SPEAKER_MARK = "\x02"
+
+
+def _is_underline(el) -> bool:
+    """True if an element carries an inline underline style — the source's way
+    of marking the presenting author within an author list."""
+    style = (el.get("style") or "").lower()
+    return "underline" in style and "text-decoration" in style
+
 
 def _html_to_text(html: str, marker: str, end_marker: str | None = None) -> str:
     """Extract the page's content region as line-structured text.
@@ -166,11 +181,19 @@ def _html_to_text(html: str, marker: str, end_marker: str | None = None) -> str:
 
     parts: list[str] = []
 
-    def _walk(el) -> None:
+    def _walk(el, u_depth: int = 0) -> None:
+        el_underlined = _is_underline(el)
         if el.tag == "br":
             parts.append("\n")
+        # Emit the speaker sentinel just before an underlined run's text, but
+        # only at the OUTERMOST underline (u_depth == 0) so a nested span can't
+        # double-mark the same name. The marker precedes the name; the element's
+        # own tail (the rest of the author list after </span>) stays unmarked.
+        if el_underlined and u_depth == 0:
+            parts.append(_SPEAKER_MARK)
         if el.text and el.text.strip():
             parts.append(re.sub(r"[ \t\r\n]+", " ", el.text))
+        child_depth = u_depth + (1 if el_underlined else 0)
         for ch in el:
             if not isinstance(ch.tag, str):   # comment / processing instruction
                 if ch.tail and ch.tail.strip():
@@ -179,7 +202,7 @@ def _html_to_text(html: str, marker: str, end_marker: str | None = None) -> str:
             blk = ch.tag in _BLOCK_TAGS
             if blk:
                 parts.append("\n")
-            _walk(ch)
+            _walk(ch, child_depth)
             if blk:
                 parts.append("\n")
             if ch.tail and ch.tail.strip():
@@ -351,17 +374,19 @@ POSTER_RE = re.compile(r"^\s*[•▪◦‣]\s*(?P<title>.+?)\s*$")
 
 
 def _clean(s: str) -> str:
-    """Collapse whitespace (incl. zero-width and NBSP) and trim."""
+    """Collapse whitespace (incl. zero-width and NBSP) and trim. Also drops the
+    speaker sentinel so it can never survive into an emitted name/affiliation."""
     if not s:
         return ""
     s = s.replace("\u200b", "").replace("\u200e", "").replace("\u00a0", " ")
+    s = s.replace(_SPEAKER_MARK, "")
     return re.sub(r"\s+", " ", s).strip()
 
 
 def _strip_emphasis(s: str) -> str:
     """Strip stray markdown/emphasis artifacts and surrounding quotes that
     occasionally survive the text extraction (e.g. '*Title coming soon*')."""
-    s = s.strip()
+    s = s.replace(_SPEAKER_MARK, "").strip()
     s = re.sub(r"^[\*_]+|[\*_]+$", "", s).strip()
     return s
 
@@ -492,24 +517,35 @@ def _parse_author_token(tok: str) -> tuple[str, list[int]]:
     return tok, insts
 
 
-def _parse_authors(line: str, institutions: list[dict]) -> tuple[list[dict], list[str]]:
-    """Parse an author line into (authors, aliases).
+def _parse_authors(line: str, institutions: list[dict]
+                   ) -> tuple[list[dict], list[str], int | None]:
+    """Parse an author line into (authors, aliases, speaker_idx).
 
     Each author is {name, insts}. When the talk has exactly one institution and
     NO author carried an explicit marker, every author is attributed to inst 1.
     Any author reference to an institution number that wasn't actually parsed
     is dropped, so the emitted data is always internally consistent (the builder
     rejects dangling references). Aliases collect the loose forms for search.
+
+    `speaker_idx` is the index (into the returned authors list) of the author
+    whose name carried the _SPEAKER_MARK sentinel — i.e. the presenting author,
+    underlined in the source. It is None when no author was marked (the source
+    occasionally omits the underline), letting the caller fall back to author 0.
     """
     valid_nums = {i["n"] for i in institutions}
     n_insts = len(institutions)
     authors: list[dict] = []
+    speaker_idx: int | None = None
     for tok in line.split(","):
         tok = tok.strip()
         if not tok:
             continue
+        is_speaker = _SPEAKER_MARK in tok
+        tok = tok.replace(_SPEAKER_MARK, "")
         name, insts = _parse_author_token(tok)
         if name:
+            if is_speaker and speaker_idx is None:
+                speaker_idx = len(authors)
             authors.append({"name": name, "insts": insts})
 
     any_marker = any(a["insts"] for a in authors)
@@ -529,7 +565,7 @@ def _parse_authors(line: str, institutions: list[dict]) -> tuple[list[dict], lis
         a["insts"] = kept
 
     aliases = [a["name"] for a in authors]
-    return authors, aliases
+    return authors, aliases, speaker_idx
 
 
 def _looks_like_authors(line: str) -> bool:
@@ -789,13 +825,20 @@ def _block_to_talk(block_lines: list[str]) -> dict | None:
                 aff_lines = rest[1:]
 
     institutions = _parse_institutions(aff_lines)
-    authors, aliases = _parse_authors(author_line, institutions)
+    authors, aliases, speaker_idx = _parse_authors(author_line, institutions)
 
-    speaker = authors[0]["name"] if authors else ""
+    # The presenting author is the one underlined in the source (carried here as
+    # speaker_idx). It is NOT always the first author — e.g. a senior author can
+    # be listed first while a student/postdoc presents — so honor the underline
+    # and fall back to author 0 only when the source left no marker.
+    spk = speaker_idx if (speaker_idx is not None and authors) else 0
+    speaker = authors[spk]["name"] if authors else ""
     # Byline convention the builder expects (see legacyTalkByline in
     # build_conference_app.py): it renders "first … last". So `last_author` must
     # be EMPTY when there is only one author — otherwise the same name is shown
     # twice ("Strasser…Strasser"). Only set last_author for 2+ authors.
+    # first/last_author follow AUTHOR order (not the speaker), so the byline
+    # still reads "first … last" with the speaker underlined wherever it sits.
     first_author = authors[0]["name"] if authors else ""
     last_author = authors[-1]["name"] if len(authors) > 1 else ""
     return {
@@ -805,7 +848,7 @@ def _block_to_talk(block_lines: list[str]) -> dict | None:
         "institutions": institutions,
         "speaker": speaker,
         "presenter": speaker,
-        "speaker_pos": 0 if authors else None,
+        "speaker_pos": spk if authors else None,
         "first_author": first_author,
         "last_author": last_author,
     }
