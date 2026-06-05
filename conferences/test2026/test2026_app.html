@@ -426,12 +426,12 @@ body[data-active-view="schedule"]       .bubble[data-kind="talk"],
 body[data-active-view="session-detail"] .bubble[data-kind="talk"],
 #me-content                              .bubble[data-kind="talk"] {
   
-  margin-left: calc(22px * var(--sp));
+  margin-left: calc(17px * var(--sp));
 }
 
 body[data-active-view="session-detail"] .section-title,
 body[data-active-view="session-detail"] .abstract-body {
-  margin-left: calc(22px * var(--sp));
+  margin-left: calc(17px * var(--sp));
   position: relative;
   z-index: 1;
 }
@@ -750,7 +750,7 @@ body[data-active-view="session-detail"] .detail-head {
 
 .session-expansion {
   margin: 0 0 calc(5px * var(--sp)) 0;
-  padding-left: calc(22px * var(--sp));
+  padding-left: calc(17px * var(--sp));
   position: relative;
 }
 
@@ -876,7 +876,7 @@ body[data-active-view="session-detail"] .detail-head {
 
 .notes-section { margin-top: 18px; }
 
-.section-title.notes-title--bright {
+.section-title.section-title--bright {
   position: relative;
   z-index: 1;
 }
@@ -1348,9 +1348,22 @@ body.has-indicator #scroll-indicator { display: flex; }
 @media (max-width: 899.98px), (orientation: portrait) {
   #me-pane { display: none !important; }
 }
+
+body[data-empty-style="hatch"][data-active-tab="sessions"][data-active-view="list"] #content .bubble[data-kind="session"]::before {
+  content: none;
+}
+body[data-empty-style="hatch"][data-active-tab="sessions"][data-active-view="list"] #content .bubble[data-kind="session"] {
+  --chev-gap: 11px;
+}
+body[data-empty-style="hatch"] .bubble.empty-session[data-kind="session"] {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(128, 128, 128, 0)    0,   rgba(128, 128, 128, 0)    5px,
+    rgba(128, 128, 128, .06)  5px, rgba(128, 128, 128, .06)  10px);
+}
 </style>
 </head>
-<body>
+<body data-empty-style="hatch">
 
 <header id="topbar">
   <button id="back-btn" hidden>‹&nbsp;Back</button>
@@ -4802,7 +4815,7 @@ function appendNotesBox(container, itemId, opts) {
 
   const section = el("section", { class: "notes-section" });
 
-  const titleClass = opts.tall ? "section-title notes-title--bright"
+  const titleClass = opts.tall ? "section-title section-title--bright"
                                : "section-title";
 
   if (opts.copyAll) {
@@ -5200,6 +5213,9 @@ function updateFontScaleControl() {
 
 function appendSettingsSection(c) {
   const sec = el("div", { class: "me-settings" });
+
+  sec.appendChild(el("div", { class: "section-title section-title--bright" },
+                     "Settings & About"));
 
   const zoomIcon = (sign) => {
     const bar = sign === "in"

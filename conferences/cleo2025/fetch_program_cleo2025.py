@@ -101,8 +101,8 @@ USER_DATA_DIR = SCRIPT_DIR / ".chrome_profile"   # persists Chromium session
 HEADLESS = True
 
 # Navigation entry point. We start at the stable planner.jsp page and click the
-# "Planner" link, which navigates to the GWT page where the day/session tree
-# lives. This avoids the old signed deep-link whose PARAMS=... token expired.
+# "Planner" link, which navigates to the JavaScript page where the day/session
+# tree lives. This avoids the old signed deep-link whose PARAMS=... token expired.
 ENTRY_URL = "https://cleo2025.abstractcentral.com/planner.jsp"
 
 # Visible text of the link/button on ENTRY_URL that takes us to the expandable
@@ -174,7 +174,7 @@ def _pending_ids(page) -> dict:
     'every other one' bug. Using ids sidesteps that completely.
 
     'hourglasses' are sessions mid-load: when a SES:plus toggle is clicked,
-    GWT replaces the icon with images/hourglass.png (on a SESSION:NNN <img>)
+    the app replaces the icon with images/hourglass.png (on a SESSION:NNN <img>)
     while it fetches the talk list, then swaps in minus.gif when done. These
     are neither plus nor minus, so without tracking them the loop would think
     nothing is pending and stop early — leaving those sessions unexpanded.
@@ -246,7 +246,7 @@ def _wait_for_hourglasses_to_settle(page, *, max_wait_ms: int = 15_000,
 def _js_click_batch(page, ids: list[str], *, wait_after_ms: int = 0
                     ) -> tuple[int, int]:
     """Dispatch a full mousedown + mouseup + click sequence on each id in
-    a single round-trip. We use all three because legacy GWT widgets
+    a single round-trip. We use all three because the legacy JavaScript widgets
     sometimes attach behaviour to mousedown/mouseup directly rather than
     to click; firing only HTMLElement.click() can silently miss those.
     Returns (clicked, missing) so callers can log progress."""
@@ -511,8 +511,8 @@ def save_expanded_dom(page) -> None:
     investigation (so we don't need to leave a live browser window open).
 
     We read `document.documentElement.outerHTML` via page.evaluate() rather
-    than Playwright's page.content(). On this GWT app the visible program is
-    built entirely by client-side JS that mutates the live DOM as we click the
+    than Playwright's page.content(). On this legacy JavaScript app the visible
+    program is built entirely by client-side JS that mutates the live DOM as we click the
     '+' / 'See More' controls; outerHTML serialises that *current* live tree,
     whereas page.content() can return a staler serialization of the original
     document in some cases. We call this AFTER expand_everything() so every
@@ -574,7 +574,7 @@ def download_program_files(page) -> None:
                 "delete to re-download.")
             continue
 
-        # Two GWT buttons exist for each label (Program Only also says PDF /
+        # Two buttons exist for each label (Program Only also says PDF /
         # Excel); we need the one whose visible text matches exactly.
         candidates = page.locator(f"button:has-text(\"{label}\")")
         n = candidates.count()
@@ -622,7 +622,7 @@ def download_program_files(page) -> None:
 
 
 def click_into_planner(ctx, page, *, appear_timeout_s: int = 60):
-    """From the ENTRY_URL page, click the 'Planner' link to reach the GWT
+    """From the ENTRY_URL page, click the 'Planner' link to reach the
     program page. Returns the page object that ends up showing the planner
     (which may be a NEW tab if the link opens one, or the same page).
 
@@ -729,7 +729,7 @@ def click_into_planner(ctx, page, *, appear_timeout_s: int = 60):
             log(f"[warn]   legacy deep-link also failed ({e}).")
     else:
         log("[load]   no BROWSE_URL fallback configured; staying on the "
-            "entry page and hoping the GWT tree is already present.")
+            "entry page and hoping the program tree is already present.")
     return page
 
 
@@ -905,12 +905,12 @@ def main() -> None:
         except Exception as e:
             log(f"[warn] Could not load {ENTRY_URL} ({e}).")
 
-        # Click the "Planner" link on planner.jsp to reach the GWT program page.
+        # Click the "Planner" link on planner.jsp to reach the program page.
         # May load in the same tab or pop a new one; the helper returns whichever
         # page object ends up holding the planner.
         page = click_into_planner(ctx, page)
 
-        log("[load] Waiting for the GWT app to render the side menu…")
+        log("[load] Waiting for the program app to render the side menu…")
         try:
             page.wait_for_selector("#BROWSE_THE_PROGRAM", timeout=45_000)
         except PWTimeout:

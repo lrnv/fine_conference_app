@@ -117,8 +117,8 @@ INPUT_STUDENT_HTML  = DATA_DIR / "ECIO26_StudentEvent.html"
 INPUT_INDUSTRY_HTML = DATA_DIR / "ECIO26_IndustryTalks.html"
 INPUT_SOCIAL_HTML   = DATA_DIR / "ECIO26_SocialEvents.html"
 INPUT_LABS_HTML     = DATA_DIR / "ECIO26_LabTours.html"
-# Optica schedule day pages. The public ECIO program is also published on
-# Optica's event site as a per-day schedule whose "Detailed View" cells carry
+# Event-site schedule day pages. The public program is also published on the
+# official event site as a per-day schedule whose "Detailed View" cells carry
 # the full author list (with affiliations) and the abstract for every talk —
 # neither of which the detailed-schedule PDF renders. These three files (one
 # per conference day) are the richest content source we have; the processor
@@ -132,10 +132,10 @@ INPUT_OPTICA_HTML = [
     DATA_DIR / "ECIO26_OpticaTuesday.html",
     DATA_DIR / "ECIO26_OpticaWednesday.html",
 ]
-# the conference planner planner DOM (outerHTML) captured by the fetcher after every day,
-# session, and "See More…" control has been expanded. This is the only ECIO
+# Conference-planner DOM (outerHTML) captured by the fetcher after every day,
+# session, and "See More…" control has been expanded. This is the only public
 # source that publishes the per-session PRESIDER(s); the detailed-schedule PDF
-# and the Optica pages don't render them. The processor keys this by the same
+# and the schedule pages don't render them. The processor keys this by the same
 # session code the PDF uses (M1B, T2A, W3B, …) and attaches presider +
 # affiliation to the matching session. `required: no` — when the file is
 # absent the sessions simply carry no presider. See `_parse_planner_presiders`.
@@ -1999,11 +1999,11 @@ _INV_SECTION_HEADER_RE = re.compile(r"^SC\d+\b")
 
 
 # =============================================================================
-# the conference planner planner — per-session PRESIDER extraction
+# Conference planner — per-session PRESIDER extraction
 #
-# The ECIO program is also published on a the conference planner (the conference planner) planner
-# at https://ecio2026.abstractcentral.com/planner.jsp . Its expanded DOM is the
-# only public ECIO source that lists each technical session's presider(s). Each
+# The program is also published on a conference planner at
+# https://ecio2026.abstractcentral.com/planner.jsp . Its expanded DOM is the
+# only public source that lists each technical session's presider(s). Each
 # session header paragraph looks like:
 #
 #   <p class="pagecontents"><strong><b>M1B. Light Emitters</b></strong><br>
@@ -2964,7 +2964,7 @@ def _load_agenda() -> dict:
 
 
 # =============================================================================
-# Optica schedule pages (per-day "Detailed View" HTML)
+# Event-site schedule pages (per-day "Detailed View" HTML)
 #
 # These three pages mirror the full program and, unlike the detailed-schedule
 # PDF, expose for every talk: the complete author list with each author's
@@ -2984,14 +2984,14 @@ def _load_agenda() -> dict:
 # where the author blob lists authors as "Name, Affiliation[, address…]"
 # joined by " / ". We parse those into structured records and key them by
 # session code (for the oral tech tracks, whose JSON session id equals the
-# Optica code) and by normalized session title (for the poster sessions, whose
-# JSON id and Optica code differ). Selectors describe FORMAT, not content.
+# schedule's code) and by normalized session title (for the poster sessions,
+# whose JSON id and schedule code differ). Selectors describe FORMAT, not content.
 # =============================================================================
 _OPTICA_CODE_RE = re.compile(r"^([A-Za-z0-9]+)\.(\d+)$")
 
 
 def _clean_optica_aff(aff: str) -> str:
-    """Trim an Optica affiliation string. The site appends the full postal
+    """Trim a schedule affiliation string. The site appends the full postal
     address after the institution (shape: "<Org>, <Dept>, <house-number>
     <Street>, <City>"); we drop comma-segments that begin with a house number
     so the affiliation map keys on the institution rather than the street.
@@ -3034,7 +3034,7 @@ _SUB_MAP = str.maketrans(_SUB_SRC, "₀₁₂₃₄₅₆₇₈₉₊₋₌₍�
 
 
 def _optica_inline_text(fragment_html: str) -> str:
-    """Flatten an Optica description HTML fragment to plain text WITHOUT
+    """Flatten a schedule description HTML fragment to plain text WITHOUT
     splitting inline markup onto separate lines. <sup>/<sub> become Unicode
     super/subscripts (so "W<sup>-1</sup>" reads "W⁻¹" rather than the
     newline-broken "W\\n-1" a naive get_text('\\n') produces); <br> becomes a
@@ -3084,7 +3084,7 @@ def _optica_split_desc(desc) -> tuple[str, list]:
 
 
 def _parse_optica_day_html(html_text: str) -> list[dict]:
-    """Parse one Optica schedule day page into a list of session dicts:
+    """Parse one event-site schedule day page into a list of session dicts:
 
         {code, title, track, presentations: [
             {code, num, title, presenter, abstract,
@@ -3138,7 +3138,7 @@ def _parse_optica_day_html(html_text: str) -> list[dict]:
 
 
 def _load_optica_enrichment() -> dict:
-    """Parse the per-day Optica pages into lookup indices:
+    """Parse the per-day schedule pages into lookup indices:
         by_code  : session code (e.g. 'M1A') -> session dict
         by_title : normalized session title  -> session dict
     plus n_pres (total presentations parsed) for logging. Missing files are
@@ -3161,7 +3161,7 @@ def _load_optica_enrichment() -> dict:
 
 def _match_optica_talks(pdf_talks: list[dict],
                         opt_pres: list[dict]) -> dict[int, dict]:
-    """Match PDF-harvested talks to Optica presentations within one session.
+    """Match PDF-harvested talks to schedule presentations within one session.
     Greedy by descending title similarity (so a confident title join wins over
     position), then a positional fallback pairs any leftovers when the counts
     line up — this rescues talks whose PDF title is OCR-mangled or truncated
@@ -3291,11 +3291,11 @@ def _load_web_enrichment() -> dict:
     present = [p.name for p in INPUT_OPTICA_HTML if p.exists()]
     if present:
         enrich["optica"] = _load_optica_enrichment()
-        log(f"[info] Optica schedule    : {len(present)} day page(s), "
+        log(f"[info] event-site schedule : {len(present)} day page(s), "
             f"{enrich['optica']['n_pres']} presentation(s) parsed "
             f"({len(enrich['optica']['by_code'])} session code(s)).")
     else:
-        log(f"[warn] Optica schedule pages not found; oral talks keep their "
+        log(f"[warn] event-site schedule pages not found; oral talks keep their "
             f"PDF-only authors (no abstracts) and poster sessions stay empty.")
 
     return enrich
@@ -3359,7 +3359,7 @@ def main() -> None:
     log("[info] loading optional web-enrichment pages …")
     enrich = _load_web_enrichment()
 
-    # Per-session presiders parsed from the the conference planner planner DOM. Keyed by
+    # Per-session presiders parsed from the conference-planner DOM. Keyed by
     # session code (M1B, T2A, …) — the same code the PDF skeleton emits as a
     # session id — so attaching them below is a direct dict lookup. Optional.
     planner_presiders = _load_planner_presiders(INPUT_PLANNER_HTML)
@@ -3759,18 +3759,19 @@ def main() -> None:
                 "extra_authors": [],
             } for v in enrich["lab_tours"]]
 
-        # Optica schedule overlay. The Optica mirror carries the full author
-        # list (with affiliations) and the abstract for every talk — neither of
-        # which the detailed-schedule PDF renders. Two uses, both keyed off the
-        # session, so the dedicated-page enrichments above (plenary, industry,
-        # workshop, student, social, labs — none of whose ids equal an Optica
-        # session code or a "Poster Blitz" title) are left untouched:
-        #   * Oral tech sessions (JSON session id == Optica session code, all
+        # Event-site schedule overlay. The schedule mirror carries the full
+        # author list (with affiliations) and the abstract for every talk —
+        # neither of which the detailed-schedule PDF renders. Two uses, both
+        # keyed off the session, so the dedicated-page enrichments above
+        # (plenary, industry, workshop, student, social, labs — none of whose
+        # ids equal a schedule session code or a "Poster Blitz" title) are left
+        # untouched:
+        #   * Oral tech sessions (JSON session id == schedule session code, all
         #     of type Technical): enrich each PDF-harvested talk with its full
-        #     Optica author list + abstract + canonical title, matched by title
+        #     schedule author list + abstract + canonical title, matched by title
         #     within the session.
         #   * Poster-blitz sessions (the PDF lists no individual posters, so
-        #     these come through empty): populate them from the Optica poster
+        #     these come through empty): populate them from the schedule poster
         #     list for the matching session title.
         optica = enrich.get("optica") or {}
         osess = optica.get("by_code", {}).get(sid)
@@ -3787,7 +3788,7 @@ def main() -> None:
                     tk["abstract"] = op["abstract"]
                 if op["authors"]:
                     tk["authors_full"] = op["authors"]
-                # Adopt the canonical Optica talk code (e.g. "M1A.1") as this
+                # Adopt the canonical schedule talk code (e.g. "M1A.1") as this
                 # talk's id/number, replacing the synthetic positional one.
                 if op["code"]:
                     tk["code"] = op["code"]
@@ -3818,10 +3819,10 @@ def main() -> None:
             t_end_min = tk["end_min"]
             t_abstract = tk.get("abstract", "")
             extra_authors_in = tk.get("extra_authors", []) or []
-            # Prefer the canonical Optica talk code (e.g. "M1A.1") as the id —
-            # it's the number ECIO actually prints and the app surfaces it in
-            # the talk's title bar. Fall back to the synthetic positional id for
-            # talks with no Optica match (plenaries, ceremonies, socials, …).
+            # Prefer the canonical schedule talk code (e.g. "M1A.1") as the id —
+            # it's the number the program actually prints and the app surfaces it
+            # in the talk's title bar. Fall back to the synthetic positional id
+            # for talks with no schedule match (plenaries, ceremonies, socials, …).
             talk_code = tk.get("code")
             tid = talk_code or _talk_id(sess["id"], i)
             if color_override:
@@ -3832,7 +3833,7 @@ def main() -> None:
             authors: list[dict] = []
             institutions: list[dict] = []
             authors_full = tk.get("authors_full")
-            # Build the author + institution lists. When the Optica overlay
+            # Build the author + institution lists. When the schedule overlay
             # supplied a full author roster (`authors_full`), it is the
             # authoritative list and is used verbatim, in paper order; `speaker`
             # is kept only as a presenter marker whose position into this list
@@ -3919,7 +3920,7 @@ def main() -> None:
                 "end_ts": t_end_iso,
             }
             # Canonical paper number (schema's optional `number`), set whenever
-            # we adopted an Optica code so the JSON records it explicitly.
+            # we adopted a schedule code so the JSON records it explicitly.
             if talk_code:
                 talk_obj["number"] = talk_code
             # Inherit the session's room as the talk's location. The schedule
@@ -3939,8 +3940,8 @@ def main() -> None:
             #   and used by the legacy byline and the search indexer.
             if speaker:
                 talk_obj["speaker"] = speaker
-                # With a PDF-only author list the speaker is author 0. With an
-                # Optica roster the presenter can sit anywhere in paper order,
+                # With a PDF-only author list the speaker is author 0. With a
+                # schedule roster the presenter can sit anywhere in paper order,
                 # so locate it by name (falling back to 0 if it isn't found —
                 # e.g. an OCR-mangled PDF speaker name).
                 pos = 0

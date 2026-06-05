@@ -176,7 +176,7 @@ def _pending_ids(page) -> dict:
     'every other one' bug. Using ids sidesteps that completely.
 
     'hourglasses' are sessions mid-load: when a SES:plus toggle is clicked,
-    GWT replaces the icon with images/hourglass.png (on a SESSION:NNN <img>)
+    the app replaces the icon with images/hourglass.png (on a SESSION:NNN <img>)
     while it fetches the talk list, then swaps in minus.gif when done. These
     are neither plus nor minus, so without tracking them the loop would think
     nothing is pending and stop early — leaving those sessions unexpanded.
@@ -248,7 +248,7 @@ def _wait_for_hourglasses_to_settle(page, *, max_wait_ms: int = 15_000,
 def _js_click_batch(page, ids: list[str], *, wait_after_ms: int = 0
                     ) -> tuple[int, int]:
     """Dispatch a full mousedown + mouseup + click sequence on each id in
-    a single round-trip. We use all three because legacy GWT widgets
+    a single round-trip. We use all three because the legacy JavaScript widgets
     sometimes attach behaviour to mousedown/mouseup directly rather than
     to click; firing only HTMLElement.click() can silently miss those.
     Returns (clicked, missing) so callers can log progress."""
@@ -518,7 +518,7 @@ def save_expanded_dom(page) -> None:
 
     We grab the live, post-expansion outerHTML rather than page.content()
     because the latter returns the original server response, not the DOM as
-    mutated by the GWT widget tree's expand clicks. The DOCTYPE is prepended
+    mutated by the JavaScript widget tree's expand clicks. The DOCTYPE is prepended
     manually since outerHTML omits it.
 
     A <base href> tag is injected right after <head> so that opening the
@@ -611,7 +611,7 @@ def download_program_files(page) -> None:
                 "delete to re-download.")
             continue
 
-        # Two GWT buttons exist for each label (Program Only also says PDF /
+        # Two buttons exist for each label (Program Only also says PDF /
         # Excel); we need the one whose visible text matches exactly.
         candidates = page.locator(f"button:has-text(\"{label}\")")
         n = candidates.count()
@@ -777,9 +777,9 @@ def main() -> None:
             log(f"[warn] Could not load {BROWSE_URL} ({e}); "
                 "navigate manually if needed.")
 
-        # planner.jsp returns a GWT app shell whose <div id="menu"> and
+        # planner.jsp returns a JavaScript app shell whose <div id="menu"> and
         # <div id="main"> get filled in asynchronously by a legacy JavaScript app.
-        log("[load] Waiting for the GWT app to render the side menu…")
+        log("[load] Waiting for the program app to render the side menu…")
         try:
             page.wait_for_selector("#BROWSE_THE_PROGRAM", timeout=45_000)
         except PWTimeout:
@@ -793,7 +793,7 @@ def main() -> None:
 
         # New auto-wait — we no longer block on ENTER. We poll for the
         # search-box instructions and DAY rows; once both are present, the
-        # GWT widget tree is settled enough to start clicking.
+        # JavaScript widget tree is settled enough to start clicking.
         wait_for_planner_ready(page)
 
         try:

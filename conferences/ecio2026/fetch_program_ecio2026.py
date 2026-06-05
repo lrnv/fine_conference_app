@@ -45,8 +45,8 @@ We also save the Agenda-of-Sessions PDF,
                                   Registration/Coffee/Lunch rows.
 
 This file is not linked from the CMS programme page; it is served from
-Optica's media CDN at a fixed path, so we fetch it directly (and treat it as
-optional — its CDN path can rotate).
+the publisher's media CDN at a fixed path, so we fetch it directly (and treat it
+as optional — its CDN path can rotate).
 
 We also save a third artifact, the invited-speakers HTML page,
 
@@ -66,33 +66,33 @@ by the date encoded in its filename. This way the fetcher keeps working when
 ECIO publishes an updated version of either PDF. The invited-speakers page,
 in contrast, lives at a fixed URL and is fetched directly.
 
-Finally, we render and save the three per-day Optica schedule pages
+Finally, we render and save the three per-day schedule pages
 
     ECIO26_OpticaMonday.html / …Tuesday.html / …Wednesday.html
 
-from Optica's event site. These mirror the full program and, unlike the PDFs,
-carry the COMPLETE author list (with affiliations) and the abstract for every
-talk. That schedule is a JavaScript single-page app behind bot protection, so
-this part drives a real headed Chromium via Playwright (switching to "Detailed
-View" and expanding every "Continue Reading" link before saving the rendered
-HTML) rather than a plain HTTP fetch. See `_fetch_optica_schedule`.
+from the official event site. These mirror the full program and, unlike the
+PDFs, carry the COMPLETE author list (with affiliations) and the abstract for
+every talk. That schedule is a JavaScript single-page app behind bot protection,
+so this part drives a real headed Chromium via Playwright (switching to
+"Detailed View" and expanding every "Continue Reading" link before saving the
+rendered HTML) rather than a plain HTTP fetch. See `_fetch_optica_schedule`.
 
-We also save the fully-expanded the conference planner / the conference planner planner DOM,
+We also save the fully-expanded conference-planner DOM,
 
     ECIO26_planner_expanded.html   the planner.jsp page DOM captured AFTER every
                                    day, session, and "See More…" control has
                                    been expanded.
 
-The planner is the only public ECIO source that lists each technical session's
-PRESIDER(s) — neither the detailed-schedule PDF nor the Optica pages render
-them. Like the CLEO 2026 fetcher, we drive a headless Chromium via Playwright,
+The planner is the only public source that lists each technical session's
+PRESIDER(s) — neither the detailed-schedule PDF nor the schedule pages render
+them. As in the sibling fetchers, we drive a headless Chromium via Playwright,
 click every '+' (day and session) and every "See More…" link, then save the
 expanded DOM for the processor to parse offline. We deliberately do NOT download
 the planner's Program+Abstracts PDF/CSV — the PDFs above are the authoritative
 program; the planner is used only for presiders.
 
 Contacts the network via urllib for the PDFs/HTML pages and via Chromium for the
-Optica schedule (headed) and the the conference planner planner (headless). The processor
+schedule pages (headed) and the planner (headless). The processor
 (process_program_ecio2026.py) runs entirely offline against what we save here.
 """
 
@@ -143,7 +143,7 @@ ARTIFACTS = [
         # (registration desk, coffee/lunch foyers, the reception/gala venues,
         # the student-event rooms) and the daily Registration/Coffee/Lunch rows.
         # It is NOT linked from the CMS programme page; it is served from
-        # Optica's media CDN at a fixed path. `required: no` — the processor
+        # the publisher's media CDN at a fixed path. `required: no` — the processor
         # falls back to detailed-schedule locations when it's absent.
         "url": (
             "https://opticaorg-dev-cac7d2csctagc8bm.z01.azurefd.net/$web/"
@@ -209,14 +209,14 @@ DATE_RE = re.compile(r"_(\d{1,2})_(\d{1,2})\.pdf$", re.IGNORECASE)
 UA = "Mozilla/5.0 (ecio2026-fetch; fine-conference-app)"
 
 # ---------------------------------------------------------------------------
-# Optica schedule pages (browser-rendered).
+# Per-day schedule pages (browser-rendered).
 #
-# The full ECIO program is also published on Optica's event site as a per-day
+# The full program is also published on the official event site as a per-day
 # schedule. Unlike the PDFs, each talk cell there carries the COMPLETE author
 # list (with affiliations) and the abstract — the richest content source for
 # the conference. The schedule is a JavaScript single-page app (the day is
-# selected by the URL hash) sitting behind Radware bot protection, so plain
-# urllib can't read it; we drive a real Chromium via Playwright instead.
+# selected by the URL hash) sitting behind bot protection, so plain urllib can't
+# read it; we drive a real Chromium via Playwright instead.
 #
 # For each day we: load the page, switch the view toggle to "Detailed View",
 # click every "Continue Reading" link so each abstract's full text is expanded
@@ -250,18 +250,18 @@ OPTICA_CAPTCHA_WAIT_S = 180
 
 
 # ---------------------------------------------------------------------------
-# the conference planner planner (browser-rendered).
+# Conference planner (browser-rendered).
 #
-# The ECIO program is ALSO published on a the conference planner / the conference planner planner.
-# That planner is the only public ECIO source that lists each technical
-# session's PRESIDER(s) — neither the detailed-schedule PDF nor the Optica pages
-# render presiders. The planner is a legacy GWT app whose day rows, session
-# rows, and "See More…" links must each be clicked to reveal their content, so
-# (like the CLEO 2026 fetcher) we drive a headless Chromium and expand
-# everything before saving the fully-expanded DOM. The processor parses the
-# saved HTML offline for the per-session presider map. We deliberately do NOT
-# download the planner's "Program + Abstracts" PDF/CSV — the PDFs above are the
-# authoritative program source; the planner is used only for presiders.
+# The program is ALSO published on a conference planner site. That planner is
+# the only public source that lists each technical session's PRESIDER(s) —
+# neither the detailed-schedule PDF nor the schedule pages render presiders. The
+# planner is a legacy JavaScript app whose day rows, session rows, and "See
+# More…" links must each be clicked to reveal their content, so (as in the
+# sibling fetchers) we drive a headless Chromium and expand everything before
+# saving the fully-expanded DOM. The processor parses the saved HTML offline for
+# the per-session presider map. We deliberately do NOT download the planner's
+# "Program + Abstracts" PDF/CSV — the PDFs above are the authoritative program
+# source; the planner is used only for presiders.
 PLANNER_URL = "https://ecio2026.abstractcentral.com/planner.jsp"
 PLANNER_OUTPUT_HTML = DATA_DIR / "ECIO26_planner_expanded.html"
 # Persistent Chromium profile for the planner, kept outside the repo.
@@ -272,7 +272,7 @@ def _planner_pending_ids(page) -> dict:
     """ids of every still-expandable planner element. Working with stable ids
     (not positional locators) avoids the 'every other one' re-indexing bug when
     a click flips plus.gif -> minus.gif. 'hourglasses' are sessions mid-load
-    (icon swapped to hourglass.png while GWT fetches the talk list)."""
+    (icon swapped to hourglass.png while the app fetches the talk list)."""
     return page.evaluate(r"""
         () => {
             const grab = sel => Array.from(document.querySelectorAll(sel)).map(el => el.id);
@@ -316,8 +316,8 @@ def _planner_wait_hourglasses(page, *, max_wait_ms=15000, poll_ms=400) -> int:
 
 
 def _planner_click_batch(page, ids, *, wait_after_ms=0) -> tuple[int, int]:
-    """Fire mousedown+mouseup+click on each id in one round-trip (legacy GWT
-    widgets sometimes bind to mousedown/up rather than click)."""
+    """Fire mousedown+mouseup+click on each id in one round-trip (the legacy
+    JavaScript widgets sometimes bind to mousedown/up rather than click)."""
     if not ids:
         return 0, 0
     res = page.evaluate(r"""
@@ -412,7 +412,7 @@ def _planner_expand_everything(page, max_outer_rounds=8) -> None:
 
 
 def _fetch_planner_dom() -> bool:
-    """Render the the conference planner planner, expand every day/session/See-More control,
+    """Render the conference planner, expand every day/session/See-More control,
     and save the fully-expanded DOM to PLANNER_OUTPUT_HTML. Returns True on a
     successful save. Headless; never raises — logs and returns False so a flaky
     planner can't abort the rest of the download (the PDFs remain authoritative
@@ -422,7 +422,7 @@ def _fetch_planner_dom() -> bool:
     from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
 
     PLANNER_PROFILE_DIR.mkdir(parents=True, exist_ok=True)
-    print(f"[info] rendering the conference planner planner (headless) from {PLANNER_URL} "
+    print(f"[info] rendering conference planner (headless) from {PLANNER_URL} "
           "to harvest per-session presiders…")
     with sync_playwright() as pw:
         ctx = pw.chromium.launch_persistent_context(
@@ -432,8 +432,8 @@ def _fetch_planner_dom() -> bool:
         try:
             page = ctx.pages[0] if ctx.pages else ctx.new_page()
             page.goto(PLANNER_URL, wait_until="domcontentloaded", timeout=60000)
-            # planner.jsp is a GWT shell filled in asynchronously; wait for the
-            # side-menu link, then for the DAY rows to render.
+            # planner.jsp is a JavaScript shell filled in asynchronously; wait
+            # for the side-menu link, then for the DAY rows to render.
             try:
                 page.wait_for_selector("#BROWSE_THE_PROGRAM", timeout=45000)
             except PWTimeout:
@@ -491,7 +491,7 @@ def _bootstrap_playwright() -> None:
 
 
 def _fetch_optica_schedule() -> tuple[int, list[str]]:
-    """Render and save the per-day Optica schedule pages.
+    """Render and save the per-day event-site schedule pages.
 
     Returns (saved_count, failed_filenames). Never raises for a single day's
     failure — it logs, records the filename, and moves on, so a flaky day or an
@@ -504,7 +504,7 @@ def _fetch_optica_schedule() -> tuple[int, list[str]]:
     OPTICA_PROFILE_DIR.mkdir(parents=True, exist_ok=True)
     saved = 0
     failed: list[str] = []
-    print("[info] rendering Optica schedule pages via headed Chromium "
+    print("[info] rendering event-site schedule pages via headed Chromium "
           "(a browser window will open)…")
     with sync_playwright() as pw:
         ctx = pw.chromium.launch_persistent_context(
@@ -522,7 +522,7 @@ def _fetch_optica_schedule() -> tuple[int, list[str]]:
                     page.goto(OPTICA_SCHEDULE_URL + day,
                               wait_until="domcontentloaded", timeout=60000)
                     # Bot wall: a headed browser normally passes, but if the
-                    # Radware interstitial shows, wait for the user to clear it.
+                    # bot-wall interstitial shows, wait for the user to clear it.
                     waited = 0
                     while ("perfdrive" in page.url
                            or "captcha" in page.title().lower()):
@@ -658,8 +658,8 @@ def main() -> None:
         print(f"[ok]   saved {target.name} ({size_kb:,.1f} KB).")
         saved_any = True
 
-    # Render + save the per-day Optica schedule pages (browser-driven). These
-    # are optional enrichment, so a failure here is a warning, not fatal.
+    # Render + save the per-day event-site schedule pages (browser-driven).
+    # These are optional enrichment, so a failure here is a warning, not fatal.
     print("-" * 72)
     try:
         opt_saved, opt_failed = _fetch_optica_schedule()
@@ -667,10 +667,10 @@ def main() -> None:
             saved_any = True
         failed.extend(opt_failed)
     except Exception as e:  # noqa: BLE001 — never let enrichment abort the run
-        print(f"[warn] Optica schedule fetch failed entirely: {e}")
+        print(f"[warn] event-site schedule fetch failed entirely: {e}")
         failed.extend(OPTICA_DAYS.values())
 
-    # Render + save the the conference planner planner DOM (browser-driven). Optional
+    # Render + save the conference planner DOM (browser-driven). Optional
     # enrichment used only for the per-session presider map; a failure here is
     # a warning, not fatal.
     print("-" * 72)

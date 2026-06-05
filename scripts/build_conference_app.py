@@ -107,6 +107,17 @@ SCRIPT_DIR      = Path(__file__).resolve().parent
 INPUT_DATA_JSON = SCRIPT_DIR / "conference_data.json"
 OUTPUT_HTML     = SCRIPT_DIR / "conference_app.html"
 
+# Sessions-list empty-session styling (build-time toggle). The Sessions list can
+# mark talk-less (event/break) sessions in one of two ways:
+#   False -> current look: expandable sessions get a disclosure CHEVRON and
+#            talk-less ones get a small "leaf-dot" in the same gutter slot.
+#   True  -> legacy look: NO disclosure chevron and NO leaf-dot; talk-less
+#            sessions are marked with diagonal HATCHING instead, and the
+#            per-time-header expand chevron is hidden too.
+# It only flips a <body data-empty-style="hatch"> attribute the stylesheet keys
+# on; the bubble gutter still toggles inline expand/collapse in either mode.
+SESSIONS_EMPTY_HATCHING = True
+
 
 # -----------------------------------------------------------------------------
 # Wide/narrow (two-pane vs one-pane) breakpoint — THE SINGLE SOURCE OF TRUTH.
@@ -2828,8 +2839,10 @@ body[data-active-view="schedule"]       .bubble[data-kind="talk"],
 body[data-active-view="session-detail"] .bubble[data-kind="talk"],
 #me-content                              .bubble[data-kind="talk"] {
   /* Nesting indent is whitespace, so it shrinks with small text (via --sp)
-     but never grows past its default — matching the vertical-margin rule. */
-  margin-left: calc(22px * var(--sp));
+     but never grows past its default — matching the vertical-margin rule.
+     17px (kept in sync with .session-expansion above) lines a talk's left edge
+     up with its parent's title text rather than sitting further right. */
+  margin-left: calc(17px * var(--sp));
 }
 /* In a session detail, the "Details" blurb sits with the (indented) talk
    bubbles; give its heading and body the SAME indent so they line up with the
@@ -2838,10 +2851,10 @@ body[data-active-view="session-detail"] .bubble[data-kind="talk"],
    z-index:0) paints a blurred page-colored layer OVER static content, dimming
    anything beneath it — so without this the Details heading/body looked muted
    next to the talk bubbles (which are themselves lifted). Same fix as
-   .date-header / .notes-title--bright. */
+   .date-header / .section-title--bright. */
 body[data-active-view="session-detail"] .section-title,
 body[data-active-view="session-detail"] .abstract-body {
-  margin-left: calc(22px * var(--sp));
+  margin-left: calc(17px * var(--sp));
   position: relative;
   z-index: 1;
 }
@@ -3218,10 +3231,14 @@ body[data-active-view="session-detail"] .detail-head {
 /* The expansion container holds only the talk bubbles for one open session.
    The left padding is the single source of the nesting indent (and the
    gutter the connector spine drops through) — talks must NOT also carry a
-   margin-left or they'd be double-indented. */
+   margin-left or they'd be double-indented. The 17px indent puts a talk
+   bubble's left edge on the session TITLE's left edge (session bar 6px + the
+   title's 11px gutter), so the open talks line up under the title text rather
+   than sitting further right. Kept in sync with the talk margin-left used in
+   the detail / Me views below. */
 .session-expansion {
   margin: 0 0 calc(5px * var(--sp)) 0;
-  padding-left: calc(22px * var(--sp));
+  padding-left: calc(17px * var(--sp));
   position: relative;
 }
 
@@ -3367,14 +3384,15 @@ body[data-active-view="session-detail"] .detail-head {
 
 /* ── Notes box (in session/talk detail views) ───────────────────── */
 .notes-section { margin-top: 18px; }
-/* Make the page-level "general conference notes" heading read exactly like the
-   day headers above it. The plain .section-title looked dim on the Me page
-   only because the connector SVG overlay (position:absolute, z-index:0) paints
-   a blurred page-colored layer OVER static content, dimming anything beneath
-   it — which is why .date-header is explicitly lifted to z-index:1 there. The
-   colour/size/weight already match .date-header (both use --muted, 11px/700,
-   uppercase); the missing piece was the z-index lift, so add just that. */
-.section-title.notes-title--bright {
+/* Me-page section headings (the general-conference Notes heading and the
+   Settings heading below it) read exactly like the day headers above them. A
+   plain .section-title looks dim on the Me page only because the connector SVG
+   overlay (position:absolute, z-index:0) paints a blurred page-colored layer
+   OVER static content, dimming anything beneath it — which is why .date-header
+   is explicitly lifted to z-index:1 there. The colour/size/weight already match
+   .date-header (both use --muted, 11px/700, uppercase); the missing piece is
+   the z-index lift, so add just that. */
+.section-title.section-title--bright {
   position: relative;
   z-index: 1;
 }
@@ -3968,9 +3986,33 @@ body.has-indicator #scroll-indicator { display: flex; }
 @media __NARROW_QUERY__ {
   #me-pane { display: none !important; }
 }
+
+/* === Legacy empty-session HATCHING mode (build flag SESSIONS_EMPTY_HATCHING) ==
+   Active only when <body data-empty-style="hatch"> is emitted. It restores the
+   pre-leaf-dot look:
+     - the Sessions list drops the per-session disclosure chevron AND the
+       talk-less leaf-dot (both are the session bubble's ::before), and reclaims
+       most of their gutter;
+     - talk-less (event/break) sessions get a faint diagonal hatch over their
+       colour instead (the original style: 6%-grey bands, theme-neutral).
+   The per-time-header expand/collapse chevron (next to the time labels) is KEPT
+   — it stays the affordance for opening collapsed sessions. The bubble gutter
+   still toggles inline expand/collapse on tap. */
+body[data-empty-style="hatch"][data-active-tab="sessions"][data-active-view="list"] #content .bubble[data-kind="session"]::before {
+  content: none;
+}
+body[data-empty-style="hatch"][data-active-tab="sessions"][data-active-view="list"] #content .bubble[data-kind="session"] {
+  --chev-gap: 11px;
+}
+body[data-empty-style="hatch"] .bubble.empty-session[data-kind="session"] {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(128, 128, 128, 0)    0,   rgba(128, 128, 128, 0)    5px,
+    rgba(128, 128, 128, .06)  5px, rgba(128, 128, 128, .06)  10px);
+}
 </style>
 </head>
-<body>
+<body__BODY_DATA__>
 
 <header id="topbar">
   <button id="back-btn" hidden>‹&nbsp;Back</button>
@@ -7608,7 +7650,7 @@ function drawMeConnectors(container) {
    from the head's bottom-left down to the last talk's midpoint, with a
    horizontal elbow turning right into each talk's colored strip.
 
-   The talks are already indented 22px under the head (see the
+   The talks are already indented 17px under the head (see the
    body[data-active-view="session-detail"] rule), which leaves a clean
    gutter for the spine + elbows. Painted as an SVG overlay inside
    #content (z-index 0) so it sits BEHIND the head and bubbles, exactly
@@ -8347,7 +8389,7 @@ function appendNotesBox(container, itemId, opts) {
   const section = el("section", { class: "notes-section" });
   // The page-level "general conference notes" box (tall) gets a brighter
   // heading via its own class, so it doesn't depend on view-scoping CSS.
-  const titleClass = opts.tall ? "section-title notes-title--bright"
+  const titleClass = opts.tall ? "section-title section-title--bright"
                                : "section-title";
   // When asked, the heading becomes a row: the label on the left and a compact
   // copy-everything control (icon + "Copy all") on the right. The control sits
@@ -8885,6 +8927,12 @@ function updateFontScaleControl() {
    to the control the user actually touched. */
 function appendSettingsSection(c) {
   const sec = el("div", { class: "me-settings" });
+
+  // "Settings" heading — same style and z-index lift as the Notes heading above
+  // it (so it reads identically and stays crisp over the Me-page connector
+  // overlay). See .section-title--bright.
+  sec.appendChild(el("div", { class: "section-title section-title--bright" },
+                     "Settings & About"));
 
   // Magnifying-glass zoom icons (lens + handle, with − / + inside the lens).
   // currentColor so they inherit the button's text color, including the
@@ -11107,6 +11155,9 @@ def main() -> None:
     html = (template
             .replace("__WIDE_QUERY__", WIDE_QUERY)
             .replace("__NARROW_QUERY__", NARROW_QUERY))
+    html = html.replace(
+        "__BODY_DATA__",
+        ' data-empty-style="hatch"' if SESSIONS_EMPTY_HATCHING else "")
     html = html.replace("__DATA_INIT__", data_init)
     safe_name = (conference_name.replace("&", "&amp;")
                                  .replace("<", "&lt;")

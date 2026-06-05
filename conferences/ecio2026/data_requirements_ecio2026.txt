@@ -64,11 +64,11 @@ description: Agenda-of-Sessions PDF — a clean one-table-per-day overview that,
   reverts session locations to detailed-schedule rooms and drops those
   logistics rows.
 manual: This PDF is NOT linked from the CMS programme page; it is served
-  from Optica's media CDN. The current direct URL is
+  from the publisher's media CDN. The current direct URL is
   https://opticaorg-dev-cac7d2csctagc8bm.z01.azurefd.net/$web/optica/media/files/events/ecio/2026/2026_ecio_agenda_of_sessions.pdf
   — download it and save into this folder's data/ subdirectory as exactly
   2026_ecio_agenda_of_sessions.pdf . If that CDN path has rotated, look for an
-  "Agenda of Sessions" link on the Optica ECIO event page
+  "Agenda of Sessions" link on the official event page
   (https://www.optica.org/events/topical_meetings/european_conference_on_integrated_optics_(ecio)/)
   and save whatever it points to under the same filename.
 
@@ -163,8 +163,8 @@ manual: Open https://www.ecio-conference.org/lab-and-company-visit/ in a
   browser and Save Page As… "Webpage, HTML Only" into data/ as exactly
   ECIO26_LabTours.html .
 
-# The three Optica schedule pages below are the richest enrichment source: the
-# full ECIO program is mirrored on Optica's event site as a per-day schedule
+# The three event-site schedule pages below are the richest enrichment source:
+# the full program is mirrored on the official event site as a per-day schedule
 # whose "Detailed View" cells carry the COMPLETE author list (with each
 # author's affiliation) AND the abstract for every talk — neither of which the
 # detailed-schedule PDF renders. The processor cross-references them by session
@@ -180,20 +180,20 @@ manual: Open https://www.ecio-conference.org/lab-and-company-visit/ in a
 [file: ECIO26_OpticaMonday.html]
 required: no
 produced_by: fetch
-description: Optica schedule — Monday. Rendered HTML of the Monday program
+description: Event-site schedule — Monday. Rendered HTML of the Monday program
   (oral sessions M1A–M3C plus Poster Blitz 1.1/1.2), with full author lists,
   affiliations, and abstracts in every talk cell.
 manual: Open https://www.optica.org/events/topical_meetings/european_conference_on_integrated_optics_(ecio)/schedule/#/Monday
   in a browser. Toggle the view selector from "Compact View" to "Detailed
   View", then click EVERY "Continue Reading" link so all abstracts are
   expanded. Save Page As… "Webpage, HTML Only" into data/ as exactly
-  ECIO26_OpticaMonday.html . (If a Radware "are you a bot" / CAPTCHA page
+  ECIO26_OpticaMonday.html . (If a bot-wall "are you a bot" / CAPTCHA page
   appears, solve it once; a normal headed browser session passes.)
 
 [file: ECIO26_OpticaTuesday.html]
 required: no
 produced_by: fetch
-description: Optica schedule — Tuesday. Rendered HTML of the Tuesday program
+description: Event-site schedule — Tuesday. Rendered HTML of the Tuesday program
   (oral sessions T1A–T2C plus Poster Blitz 2.1/2.2), with full author lists,
   affiliations, and abstracts in every talk cell.
 manual: Open https://www.optica.org/events/topical_meetings/european_conference_on_integrated_optics_(ecio)/schedule/#/Tuesday
@@ -204,7 +204,7 @@ manual: Open https://www.optica.org/events/topical_meetings/european_conference_
 [file: ECIO26_OpticaWednesday.html]
 required: no
 produced_by: fetch
-description: Optica schedule — Wednesday. Rendered HTML of the Wednesday
+description: Event-site schedule — Wednesday. Rendered HTML of the Wednesday
   program (oral sessions W1A–W3B), with full author lists, affiliations, and
   abstracts in every talk cell.
 manual: Open https://www.optica.org/events/topical_meetings/european_conference_on_integrated_optics_(ecio)/schedule/#/Wednesday
@@ -212,10 +212,10 @@ manual: Open https://www.optica.org/events/topical_meetings/european_conference_
   link, then Save Page As… "Webpage, HTML Only" into data/ as exactly
   ECIO26_OpticaWednesday.html .
 
-# The the conference planner / the conference planner planner is the only public ECIO source that
-# lists each technical session's PRESIDER(s). The fetcher drives a headless
-# Chromium, expands every day/session/"See More…" control (like the CLEO 2026
-# fetcher), and saves the fully-expanded DOM. The processor keys the presider
+# The conference planner is the only public source that lists each technical
+# session's PRESIDER(s). The fetcher drives a headless Chromium, expands every
+# day/session/"See More…" control (as in the sibling fetchers), and saves the
+# fully-expanded DOM. The processor keys the presider
 # map by session code (M1B, T2A, W3B, …) — the same code the PDF uses — and
 # attaches presider + affiliation to the matching session. Optional: missing
 # this file just leaves every session without a presider. (We deliberately do
@@ -225,7 +225,7 @@ manual: Open https://www.optica.org/events/topical_meetings/european_conference_
 [file: ECIO26_planner_expanded.html]
 required: no
 produced_by: fetch
-description: Fully-expanded the conference planner planner DOM (outerHTML). Source of the
+description: Fully-expanded conference-planner DOM (outerHTML). Source of the
   per-session presider names + affiliations.
 manual: Open https://ecio2026.abstractcentral.com/planner.jsp in a browser,
   wait for the program to render, then expand EVERY day row, every session row

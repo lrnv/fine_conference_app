@@ -45,14 +45,51 @@ What IS fine in source code:
   not content.
 - Generic type labels in a registry ("Invited", "Contributed", "Poster",
   "Plenary"). These are universal genre labels, not copyrighted content.
-- The conference's display name, but ONLY as a single obvious top-level
-  constant near the top of the processor (e.g. `CONFERENCE_NAME = "CLEO 2026"`)
-  so the user can review and edit it. It ends up as `conference_name` in the
-  JSON output.
+- The conference's display name — but PREFER deriving it at runtime from a
+  source file (page title, PDF header, etc.) over hard-coding it. If a clean
+  runtime source isn't available, a single obvious top-level constant near the
+  top of the processor (e.g. `CONFERENCE_NAME = "..."`) is an acceptable
+  fallback the user can review; keep it to that one place. It ends up as
+  `conference_name` in the JSON output. (See "Keep platform and conference
+  identity out of scripts" below.)
 
 If you're tempted to write a fixture, mock, or "default" that contains program
 content, stop. That belongs in `data/`, in a file the user supplies or the
 fetcher downloads.
+
+## Keep platform and conference identity out of scripts
+
+Two related habits keep the tracked code clean of names it doesn't need.
+
+**Never name a third-party platform or vendor — in comments OR in code.** The
+sites a fetcher scrapes run on branded products (abstract-submission systems,
+event-site hosts, bot-protection services, the JavaScript framework a planner
+happens to use, …). Those trademarks have no business in this repo. Describe
+them by ROLE, generically:
+
+- the abstract/submission system or planner → "the conference planner"
+- the publisher's schedule mirror → "the event-site schedule"
+- a bot wall / CAPTCHA vendor → "the bot wall" / "bot protection"
+- the planner's UI framework → "a legacy JavaScript app"
+
+This applies to comments, docstrings, log/print strings, and identifiers
+(variable, function, and constant names). The ONE exception is a **functional
+URL** the fetcher must request — you obviously can't download without it, so the
+host in a URL string stays. Everything else describing that host should be
+generic.
+
+**Avoid the conference's name in scripts; let the directory carry it.** The
+subdirectory slug (e.g. `conferences/<slug>/`) is the one place the conference
+is named, and that's enough — it scopes every file inside. In the scripts
+themselves, prefer "the conference"/"the program" over the acronym+year, and
+fetch the display name rather than hard-coding it (see the display-name bullet
+above). A docstring may still reference the conference where genuinely needed
+for clarity, but reach for the generic phrasing first.
+
+Both rules are about the SOURCE you commit, not the data it produces: the
+`conference_name`, vendor-hosted URLs, and program content all still flow
+through at runtime — they just shouldn't be baked into tracked comments or
+identifiers.
 
 ## Workflow for a new conference
 
