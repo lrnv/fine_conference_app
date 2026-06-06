@@ -24,7 +24,7 @@
 """
 process_program_cleo2026.py — PROCESS ONLY.
 
-The "processor" half of the CLEO 2026 pipeline: it reads the raw files the
+The "processor" half of the pipeline: it reads the raw files the
 downloader (fetch_program_cleo2026.py) saved into data/ and turns them into the
 single, clean, FINAL conference_data.json the downstream
 build_conference_app.py / build_affiliation_map.py scripts consume. It does NO
@@ -554,7 +554,7 @@ def _group_supers_x(words: list[dict]) -> list[tuple[float, float, str]]:
     by x-gap as well as trailing commas. The x-gap rule is what lets us tell a
     single author's space-separated multi-affiliation (rare, e.g. '1 7' would be
     one author) apart from two adjacent single-affiliation authors — though in
-    practice CLEO writes multi-affiliations comma-separated, so the gap rule is
+    practice the source writes multi-affiliations comma-separated, so the gap rule is
     mainly a safety net. The (x0, x1) spans are what `_align_supers_to_names`
     uses to attach each group to the name it trails."""
     ws = sorted(words, key=lambda w: w["x0"])
@@ -820,11 +820,11 @@ def parse_pdf(path: Path) -> dict[str, dict]:
 # -----------------------------------------------------------------------------
 # The cover page (page 1) reads, top to bottom:
 #     Program Schedule and Abstract Book        <- fixed header
-#     CLEO 2026                                  <- the canonical name we want
+#     Sample Conference 2026                     <- the canonical name we want
 #     May 17 - 21, 2026                          <- the dates
 # We anchor on the fixed header line and return the first following non-empty
 # line that isn't itself a date line. Downstream (build_conference_app.py) uses
-# this as the page <title> instead of hard-coding "CLEO 2026".
+# this as the page <title> instead of hard-coding the conference name.
 _COVER_HEADER = "program schedule and abstract book"
 _COVER_DATE_RE = re.compile(
     # "May 17 - 21, 2026"  or  "May 31 - June 4, 2026"  (also en-dash, optional period)
@@ -1802,9 +1802,9 @@ def _is_short_course_session(s: dict) -> bool:
     return ("short course" in title) or code.startswith("SC")
 
 
-# --- Primary source: the public CLEO short-courses website -------------------
+# --- Primary source: the event-site short-courses page -----------------------
 # The planner's "View Event Details" popup gives only the instructor NAME and
-# is flaky to scrape. The public short-courses page
+# is flaky to scrape. The event-site short-courses page
 # (https://cleoconference.org/2026-short-courses/) lists every course as a link
 # whose TEXT is
 #     "SC<code> <Course Title> <Instructor> [<Affiliation>] (<Country>) <Day>, …"
@@ -2381,7 +2381,7 @@ def _collapse_session_tags(sessions):
 
 def main() -> None:
     log("=" * 72)
-    log("[config] CLEO 2026 PROCESSOR starting up.")
+    log("[config] PROCESSOR starting up.")
     log(f"[config]   script dir          : {SCRIPT_DIR}")
     log(f"[config]   data dir            : {DATA_DIR}")
     log(f"[config]   planner HTML        : {INPUT_DOM_HTML}")

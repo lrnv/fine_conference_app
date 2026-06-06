@@ -23,16 +23,16 @@
 
 """fetch_program_spiepw2025.py — DOWNLOAD ONLY.
 
-The "downloader" half of the SPIE Photonics West 2025 pipeline. The entire
-technical program is published by SPIE as a single PDF, the "Technical Program"
-book (session-by-session schedule with every talk's number, time, title, and
-author list — no abstracts). We download that one PDF into data/ as
+The "downloader" half of the pipeline. The entire technical program is published
+by the conference as a single PDF, the "Technical Program" book (session-by-session
+schedule with every talk's number, time, title, and author list — no abstracts).
+We download that one PDF into data/ as
 
     PW25-Technical-Program.pdf
 
 where process_program_spiepw2025.py reads it entirely offline.
 
-The live SPIE URL for the 2025 program may eventually be retired, so we point
+The live conference URL for the program may eventually be retired, so we point
 at a stable Internet Archive (Wayback Machine) snapshot of it and use the raw
 ("id_") modifier so we get the PDF bytes rather than the Wayback viewer page.
 If the snapshot ever disappears, see data_requirements_spiepw2025.txt for the
@@ -54,7 +54,7 @@ DATA_DIR = SCRIPT_DIR / "data"
 
 PDF_NAME = "PW25-Technical-Program.pdf"
 
-# Stable Wayback snapshot of SPIE's PW 2025 Technical Program PDF. The "id_"
+# Stable Wayback snapshot of the conference's Technical Program PDF. The "id_"
 # modifier after the timestamp asks the Wayback Machine for the ORIGINAL bytes
 # (the PDF) rather than its rewritten viewer page.
 PDF_URL = (
@@ -74,7 +74,7 @@ def _fetch_bytes(url: str) -> bytes:
 
 def main() -> None:
     print("=" * 72)
-    print("[config] SPIE Photonics West 2025 DOWNLOADER starting up.")
+    print("[config] conference program DOWNLOADER starting up.")
     print(f"[config]   script dir : {SCRIPT_DIR}")
     print(f"[config]   data dir   : {DATA_DIR}")
     print(f"[config]   pdf url    : {PDF_URL}")

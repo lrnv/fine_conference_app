@@ -24,7 +24,7 @@
 """
 process_program_cleo2025.py — PROCESS ONLY.
 
-The "processor" half of the CLEO 2025 pipeline: it reads the raw files the
+The "processor" half of the conference pipeline: it reads the raw files the
 downloader (fetch_program_cleo2025.py) saved into data/ and turns them
 into the single, clean, FINAL conference_data.json the downstream
 build_conference_app.py / build_affiliation_map.py scripts consume. It does NO
@@ -47,8 +47,8 @@ What it does
    session -> talk structure a live browser pass would produce. Small helpers
    reproduce the browser's .innerText / .innerHTML semantics on the lxml tree,
    so the parse matches the live-rendered result (no live site, no browser). In
-   particular .innerHTML preserves the <b>…</b> bold markup that CLEO 2025 uses
-   to mark Invited talks (see _title_is_bolded / parse_talk_content).
+   particular .innerHTML preserves the <b>…</b> bold markup that this conference
+   uses to mark Invited talks (see _title_is_bolded / parse_talk_content).
 2. Parses the saved short-courses HTML (an archived page whose <h2>/<h3>/<h4>
    blocks give course title / instructor / affiliation) and matches each course
    to its planner session by NORMALIZED TITLE (the page carries no SC codes).
@@ -105,7 +105,8 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 # =============================================================================
 # Small HTML helpers + session/talk content parsers
-# (including _title_is_bolded: CLEO 2025 marks Invited talks via a bold title)
+# (including _title_is_bolded: this conference marks Invited talks via a bold
+# title)
 # =============================================================================
 # -----------------------------------------------------------------------------
 # Small HTML helpers
@@ -154,7 +155,7 @@ def split_talk_number(line: str) -> tuple[str, str]:
         'AM1C.2.'        -> ('AM1C.2', '')
         '4290312. Title' -> ('4290312', 'Title')   # bare numeric Final ID
 
-    CLEO's planner uses two talk-number styles. Most coded sessions show a
+    The planner uses two talk-number styles. Most coded sessions show a
     conference code like 'AM1C.1', but a large number of talks (poster /
     contributed, and anything supplemented from the abstract book) are shown
     with a bare numeric Final ID like '4290312'. The original regex required
@@ -277,7 +278,7 @@ def parse_presiders(raw: str) -> list[dict]:
 
 def _title_is_bolded(title_html: str) -> bool:
     """Decide whether a talk TITLE is emboldened in the planner DOM, which is
-    how CLEO 2025 marks Invited talks.
+    how this conference marks Invited talks.
 
     `title_html` is the HTML BEFORE the first <br> — i.e. "NUMBER. <b>Title</b>"
     for an invited talk, or "NUMBER. Title" for a contributed one. The bold may
@@ -345,8 +346,8 @@ def parse_talk_content(html: str) -> dict:
     authors_html = m.group(1) if m else rest
 
     # ---- title -------------------------------------------------------------
-    # Detect the CLEO-2025 "Invited" convention BEFORE stripping tags: invited
-    # talks have their TITLE emboldened (wrapped in <b>…</b>) in the planner
+    # Detect this conference's "Invited" convention BEFORE stripping tags:
+    # invited talks have their TITLE emboldened (wrapped in <b>…</b>) in the planner
     # DOM, whereas contributed talks have a plain-text title. The bold may be
     # split across several <b> runs (e.g. "<b>… and</b><b> more</b>"), so we
     # compare the concatenated bold text against the full title text rather
@@ -370,8 +371,8 @@ def parse_talk_content(html: str) -> dict:
             out["title"] = re.sub(pattern, "", out["title"], flags=re.I).strip()
     out["title"] = re.sub(r"\s{2,}", " ", out["title"])
 
-    # Bolded title -> Invited (CLEO 2025 planner convention). Only add when not
-    # already flagged by an explicit "[Invited Talk]" marker above.
+    # Bolded title -> Invited (this conference's planner convention). Only add
+    # when not already flagged by an explicit "[Invited Talk]" marker above.
     #
     # We tag bold-derived invited talks as "Invited (bold)" rather than plain
     # "Invited" so the distinction survives the CSV->JSON pipeline: bold-only
@@ -411,11 +412,11 @@ def time_cell_status(time_text: str) -> str:
 def _autodetect_data_file(suffix: str, label: str) -> Path:
     """Return the single file in data/ with the given suffix (e.g. '.pdf').
 
-    The in-app download step is disabled (the site's download buttons don't
-    work reliably and the served filenames don't match the fixed names
+    The in-app download step is disabled (the event-site's download buttons
+    don't work reliably and the served filenames don't match the fixed names
     anyway), so the Program + Abstracts files are placed into
-    data/ manually under WHATEVER name the site gave them, e.g.
-    'CLEO 2025_06DEC2025-1.pdf' / 'CLEO 2025_06DEC2025.csv'. Rather than force
+    data/ manually under WHATEVER name the event-site gave them, e.g.
+    'Program_06DEC2025-1.pdf' / 'Program_06DEC2025.csv'. Rather than force
     a rename, we just pick up the lone PDF and the lone CSV.
 
     The returned Path may not exist (if nothing matches); callers already
@@ -449,10 +450,10 @@ def _autodetect_data_file(suffix: str, label: str) -> Path:
 def _resolve_data_file(fixed_name: str, suffix: str, label: str) -> Path:
     """Resolve the path to an official data file.
 
-    Phase 0 now downloads the Program + Abstracts files itself (like the 2026
-    fetch script) and saves them under the fixed DOWNLOAD_BUTTONS names. So we
+    Phase 0 now downloads the Program + Abstracts files itself (via the fetch
+    script) and saves them under the fixed DOWNLOAD_BUTTONS names. So we
     PREFER the fixed name in data/. If it isn't there yet (download hasn't run,
-    failed, or the file was placed manually under the site's own
+    failed, or the file was placed manually under the event-site's own
     name), fall back to autodetecting the lone file of that type in data/.
 
     Note: at import time the download usually hasn't happened, so this
@@ -712,8 +713,8 @@ def _group_supers_x(words: list[dict]) -> list[tuple[float, float, str]]:
     by x-gap as well as trailing commas. The x-gap rule is what lets us tell a
     single author's space-separated multi-affiliation (rare, e.g. '1 7' would be
     one author) apart from two adjacent single-affiliation authors — though in
-    practice CLEO writes multi-affiliations comma-separated, so the gap rule is
-    mainly a safety net. The (x0, x1) spans are what `_align_supers_to_names`
+    practice this conference writes multi-affiliations comma-separated, so the
+    gap rule is mainly a safety net. The (x0, x1) spans are what `_align_supers_to_names`
     uses to attach each group to the name it trails."""
     ws = sorted(words, key=lambda w: w["x0"])
     groups: list[list[dict]] = []
@@ -1038,11 +1039,11 @@ def extract_pdf_affiliations(pdf_path: Path) -> set[str]:
     return keep
 
 
-# A conference-name line on the abstract-book cover looks like "CLEO 2025"
-# (and variants: "CLEO: 2025", "CLEO 2025 — Conference on Lasers and
-# Electro-Optics"). It always carries a 4-digit year and is a short title
-# line, never a paragraph. The date line ("May 4 - 9, 2025") and the header
-# ("Program Schedule and Abstract Book") don't match this shape.
+# A conference-name line on the abstract-book cover looks like "ACRO 2025"
+# (and variants: "ACRO: 2025", "ACRO 2025 — Full Conference Name"). It always
+# carries a 4-digit year and is a short title line, never a paragraph. The date
+# line ("May 4 - 9, 2025") and the header ("Program Schedule and Abstract Book")
+# don't match this shape.
 _CONF_NAME_RE = re.compile(
     r"^[A-Za-z][A-Za-z0-9&'.:()\u2013\u2014\- ]*"
     r"\b(?:19|20)\d{2}\b"
@@ -1050,12 +1051,12 @@ _CONF_NAME_RE = re.compile(
 
 
 def extract_conference_name(pdf_path: Path) -> str:
-    """Pull the conference name (e.g. 'CLEO 2025') off the abstract book's
+    """Pull the conference name (e.g. 'ACRO 2025') off the abstract book's
     cover page.
 
     The cover's first lines are typically:
         Program Schedule and Abstract Book
-        CLEO 2025
+        ACRO 2025
         May 4 - 9, 2025
     so we prefer the line immediately AFTER the 'Abstract Book' / 'Program
     Schedule' header, falling back to the first short, year-bearing line near
@@ -1282,8 +1283,8 @@ def _affiliation_is_usable(aff: str) -> bool:
 # =============================================================================
 # Type registries: which session/talk types exist, their labels + colors.
 # -----------------------------------------------------------------------------
-# This replaces the CLEO-specific keyword heuristics + JS label maps that used
-# to live in build_conference_app.py (pick_session_color / pick_talk_color /
+# This replaces the conference-specific keyword heuristics + JS label maps that
+# used to live in build_conference_app.py (pick_session_color / pick_talk_color /
 # TYPE_LABELS_*). The classification logic stays keyword-based (so behaviour is
 # identical), but now it runs HERE and the result — a stable color token, which
 # IS the type id the app filters on — is baked into every record, alongside a
@@ -1384,8 +1385,8 @@ def classify_talk_color(talk_title: str, session_title: str,
     """Map a talk to a color token (== the talk's type id).
 
     `status` carries any scraped/official status tags (e.g. "Invited",
-    "Tutorial"). CLEO 2025 marks Invited talks by emboldening the title in the
-    planner DOM rather than with an "[Invited Talk]" text marker, so the
+    "Tutorial"). This conference marks Invited talks by emboldening the title in
+    the planner DOM rather than with an "[Invited Talk]" text marker, so the
     processor records "Invited" in the status; we honor that here in addition to
     the legacy title-text check.
 
@@ -1881,9 +1882,9 @@ def build_conference_data(conference_name: str,
         status_tags = (r.get("Abstract Status") or "").strip()
         withdrawn = "withdrawn" in status_tags.lower()
 
-        # CLEO 2025 marks Invited talks by emboldening the title in the planner
-        # (no "[Invited Talk]" text and often nothing in the official CSV's
-        # Abstract Status), so fold the scraped status in. Merge as a
+        # This conference marks Invited talks by emboldening the title in the
+        # planner (no "[Invited Talk]" text and often nothing in the official
+        # CSV's Abstract Status), so fold the scraped status in. Merge as a
         # ';'-separated tag list, de-duped case-insensitively.
         if scraped_status:
             existing = {t.strip().lower()
@@ -1906,8 +1907,8 @@ def build_conference_data(conference_name: str,
             r.get("Abstract or Placeholder End Time", ""))
 
         # --- Reclassify short bold-derived "Invited" talks --------------------
-        # CLEO 2025 has no "[Invited Talk]" text marker; the processor instead
-        # infers "Invited" from a bolded title and records it as the distinct
+        # This conference has no "[Invited Talk]" text marker; the processor
+        # instead infers "Invited" from a bolded title and records it as the distinct
         # "Invited (bold)" tag. But the bold-title heuristic over-fires: short
         # (sub-30-min) slots tagged this way are really ordinary CONTRIBUTED
         # talks, not invited ones. For those we DROP the bogus "Invited (bold)"
@@ -2335,8 +2336,8 @@ def supplement_from_abstract_book(program: list[dict]) -> None:
 #   * inner_html(el)  mimics element.innerHTML: it serializes the element with
 #     lxml's HTML serializer and strips the outer tag, so stray '<' / '&' in
 #     text nodes come back escaped as '&lt;' / '&amp;' like the browser — and,
-#     crucially for CLEO 2025, the <b>…</b> bold markup that flags Invited talks
-#     is preserved so parse_talk_content's _title_is_bolded still fires.
+#     crucially for this conference, the <b>…</b> bold markup that flags Invited
+#     talks is preserved so parse_talk_content's _title_is_bolded still fires.
 #
 # One structural note: an HTML parser (like the browser, and like lxml/libxml2)
 # may HOIST the per-talk "View Presentation" <table> out of the content <p>
@@ -2517,8 +2518,8 @@ def collect_program_from_html(html_path: Path) -> list[dict]:
 # =============================================================================
 # Short-course instructors — parsed from the saved short-courses HTML (lxml).
 #
-# CLEO 2025's archived short-courses page has, per course, an <h2> title, an
-# <h3> instructor, and an <h4> affiliation. The page carries no SC codes, so we
+# This conference's archived short-courses page has, per course, an <h2> title,
+# an <h3> instructor, and an <h4> affiliation. The page carries no SC codes, so we
 # match each course to its planner session by NORMALIZED TITLE (see
 # _normalize_course_title). This mirrors a live fetch, which would walk
 # h2/h3/h4 in document order.
@@ -2756,7 +2757,7 @@ def _collapse_session_tags(sessions):
 
 def main() -> None:
     log("=" * 72)
-    log("[config] CLEO 2025 PROCESSOR starting up.")
+    log("[config] PROCESSOR starting up.")
     log(f"[config]   script dir          : {SCRIPT_DIR}")
     log(f"[config]   data dir            : {DATA_DIR}")
     log(f"[config]   planner HTML        : {INPUT_DOM_HTML}")

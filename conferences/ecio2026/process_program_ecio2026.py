@@ -125,8 +125,8 @@ INPUT_LABS_HTML     = DATA_DIR / "ECIO26_LabTours.html"
 # abstracts on the PDF-derived oral talks, and to populate the poster sessions
 # the PDF leaves empty (the wide grid lists no individual posters). All three
 # are `required: no` — each is optional and the processor falls back to the
-# PDF-only harvest when any is absent. See `_load_optica_enrichment`.
-INPUT_OPTICA_HTML = [
+# PDF-only harvest when any is absent. See `_load_event_schedule`.
+INPUT_EVENT_SCHEDULE_HTML = [
     DATA_DIR / "ECIO26_OpticaMonday.html",
     DATA_DIR / "ECIO26_OpticaTuesday.html",
     DATA_DIR / "ECIO26_OpticaWednesday.html",
@@ -1247,7 +1247,7 @@ def _discover_special_sessions(
                 n = fields.get("n") or "?"
                 sub = fields.get("sub") or "?"
                 # Convert sub-digit to a column letter (1→A, 2→B, 3→C) so
-                # the id reads as a CLEO-style code (PB1A, PB1B, …) rather
+                # the id reads as a track-style code (PB1A, PB1B, …) rather
                 # than a slug. The PDF prints both blitzes side-by-side on
                 # a single row: they run in PARALLEL in different rooms,
                 # so both share the same time span — the full extent of
@@ -1659,7 +1659,7 @@ def _build_minute_slots(start: str, end: str) -> list[tuple[str, str]]:
 # by a capital letter so we don't split a mid-sentence abbreviation.
 _PERIOD_SPLIT_RE = re.compile(r"\s*\.\s+(?=[A-ZÀ-Ý])")
 # Speaker, Affiliation separator: a comma with optional whitespace either side.
-# The PDF occasionally renders as "Heidi Potts ,Zurich Instruments" (space
+# The PDF occasionally renders as "Jane Doe ,Example Institute" (space
 # before, none after), so we tolerate both directions.
 _COMMA_SPLIT_RE = re.compile(r"\s*,\s*")
 
@@ -2016,7 +2016,7 @@ _INV_SECTION_HEADER_RE = re.compile(r"^SC\d+\b")
 # =============================================================================
 # Conference planner — per-session PRESIDER extraction
 #
-# The program is also published on a third-party planner whose expanded DOM
+# The program is also published on the conference planner whose expanded DOM
 # is the only public source that lists each technical session's presider(s).
 # Each session header paragraph looks like:
 #
@@ -2047,8 +2047,8 @@ def _parse_planner_presiders(raw: str) -> list[dict]:
     """Split a presider string 'Name (Aff) and Name2 (Aff2)' into
     [{name, affiliation}, …]. Separators (',', '&', ' and ') only split at
     paren-depth 0 so an affiliation like '(Korea Adv Inst of Sci & Tech)' or
-    '(Univ of Science and Technology)' is never torn apart. Mirrors the CLEO
-    2026 presider parser."""
+    '(Univ of Science and Technology)' is never torn apart. Mirrors the
+    sibling presider parser."""
     if not raw:
         return []
     parts: list[str] = []
@@ -2318,7 +2318,7 @@ def _load_invited_index(path: Path) -> InvitedIndex:
 # =============================================================================
 # Web enrichment: optional HTML pages from the conference website that fill
 # in detail the detailed-schedule PDF doesn't render. Each parser is tolerant of small
-# CMS-block markup drift (extra spans, attribute reordering, &-entities)
+# CMS-hosted-page markup drift (extra spans, attribute reordering, &-entities)
 # and returns a small typed struct. _load_web_enrichment() ties them together
 # into a single `enrichment` dict that main() consults by session_id and
 # speaker name. Every individual file is optional: when missing we just log a
@@ -2766,7 +2766,7 @@ def _parse_lab_tours_html(html_text: str) -> list[dict]:
 # Web-enrichment loader -------------------------------------------------------
 
 # Mapping of (workshop position) → SKELETON session_id. The codes here must
-# match the ones _discover_special_sessions mints (CLEO-style: WS<N>).
+# match the ones _discover_special_sessions mints (track-style: WS<N>).
 _WORKSHOP_POS_TO_SID = {1: "WS1", 2: "WS2"}
 
 # Mapping of (industry-session position) → SKELETON session_id (IND<N>).
@@ -2999,10 +2999,10 @@ def _load_agenda() -> dict:
 # schedule's code) and by normalized session title (for the poster sessions,
 # whose JSON id and schedule code differ). Selectors describe FORMAT, not content.
 # =============================================================================
-_OPTICA_CODE_RE = re.compile(r"^([A-Za-z0-9]+)\.(\d+)$")
+_EVENT_CODE_RE = re.compile(r"^([A-Za-z0-9]+)\.(\d+)$")
 
 
-def _clean_optica_aff(aff: str) -> str:
+def _clean_event_aff(aff: str) -> str:
     """Trim a schedule affiliation string. The site appends the full postal
     address after the institution (shape: "<Org>, <Dept>, <house-number>
     <Street>, <City>"); we drop comma-segments that begin with a house number
@@ -3018,7 +3018,7 @@ def _clean_optica_aff(aff: str) -> str:
     return ", ".join(kept).strip(" ,")
 
 
-def _parse_optica_authors(blob: str) -> list[tuple[str, str]]:
+def _parse_event_authors(blob: str) -> list[tuple[str, str]]:
     """Split the "<strong>Authors</strong>:" blob into (name, affiliation)
     pairs. Authors are joined by " / "; within each, the text before the first
     comma is the name and the remainder is the (address-trimmed) affiliation."""
@@ -3029,7 +3029,7 @@ def _parse_optica_authors(blob: str) -> list[tuple[str, str]]:
             continue
         if "," in chunk:
             name, aff = chunk.split(",", 1)
-            out.append((name.strip(), _clean_optica_aff(aff)))
+            out.append((name.strip(), _clean_event_aff(aff)))
         else:
             out.append((chunk, ""))
     return [(n, a) for n, a in out if n]
@@ -3045,7 +3045,7 @@ _SUP_MAP = str.maketrans(_SUP_SRC, "⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾�
 _SUB_MAP = str.maketrans(_SUB_SRC, "₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎")
 
 
-def _optica_inline_text(fragment_html: str) -> str:
+def _event_inline_text(fragment_html: str) -> str:
     """Flatten a schedule description HTML fragment to plain text WITHOUT
     splitting inline markup onto separate lines. <sup>/<sub> become Unicode
     super/subscripts (so "W<sup>-1</sup>" reads "W⁻¹" rather than the
@@ -3075,27 +3075,27 @@ def _optica_inline_text(fragment_html: str) -> str:
     return re.sub(r"\s+", " ", node.get_text("")).strip()
 
 
-def _optica_split_desc(desc) -> tuple[str, list]:
+def _event_split_desc(desc) -> tuple[str, list]:
     """Split a presentation__description node into (abstract, authors). The
     description is the abstract followed by a trailing
     "<strong>Authors</strong>: <name, aff / …>" block; we split on that marker
     in the HTML (not the flattened text) so the abstract's own inline markup is
-    preserved by _optica_inline_text."""
+    preserved by _event_inline_text."""
     inner = desc.decode_contents()
     parts = re.split(r"<strong>\s*Authors\s*</strong>\s*:?",
                      inner, maxsplit=1, flags=re.IGNORECASE)
-    abstract = _optica_inline_text(parts[0])
+    abstract = _event_inline_text(parts[0])
     authors: list = []
     if len(parts) > 1:
         from bs4 import BeautifulSoup
         atext = re.sub(
             r"\s+", " ",
             BeautifulSoup(parts[1], "html.parser").get_text(" ")).strip()
-        authors = _parse_optica_authors(atext)
+        authors = _parse_event_authors(atext)
     return abstract, authors
 
 
-def _parse_optica_day_html(html_text: str) -> list[dict]:
+def _parse_event_day_html(html_text: str) -> list[dict]:
     """Parse one event-site schedule day page into a list of session dicts:
 
         {code, title, track, presentations: [
@@ -3130,8 +3130,8 @@ def _parse_optica_day_html(html_text: str) -> list[dict]:
             abstract, authors = "", []
             desc = col.select_one("p.presentation__description")
             if desc:
-                abstract, authors = _optica_split_desc(desc)
-            mnum = _OPTICA_CODE_RE.match(pcode)
+                abstract, authors = _event_split_desc(desc)
+            mnum = _EVENT_CODE_RE.match(pcode)
             presentations.append({
                 "code": pcode,
                 "num": int(mnum.group(2)) if mnum else None,
@@ -3149,7 +3149,7 @@ def _parse_optica_day_html(html_text: str) -> list[dict]:
     return sessions
 
 
-def _load_optica_enrichment() -> dict:
+def _load_event_schedule() -> dict:
     """Parse the per-day schedule pages into lookup indices:
         by_code  : session code (e.g. 'M1A') -> session dict
         by_title : normalized session title  -> session dict
@@ -3159,10 +3159,10 @@ def _load_optica_enrichment() -> dict:
     by_code: dict[str, dict] = {}
     by_title: dict[str, dict] = {}
     n_pres = 0
-    for path in INPUT_OPTICA_HTML:
+    for path in INPUT_EVENT_SCHEDULE_HTML:
         if not path.exists():
             continue
-        for s in _parse_optica_day_html(path.read_text(encoding="utf-8")):
+        for s in _parse_event_day_html(path.read_text(encoding="utf-8")):
             n_pres += len(s["presentations"])
             if s["code"]:
                 by_code.setdefault(s["code"], s)
@@ -3171,13 +3171,13 @@ def _load_optica_enrichment() -> dict:
     return {"by_code": by_code, "by_title": by_title, "n_pres": n_pres}
 
 
-def _match_optica_talks(pdf_talks: list[dict],
+def _match_event_talks(pdf_talks: list[dict],
                         opt_pres: list[dict]) -> dict[int, dict]:
     """Match PDF-harvested talks to schedule presentations within one session.
     Greedy by descending title similarity (so a confident title join wins over
     position), then a positional fallback pairs any leftovers when the counts
     line up — this rescues talks whose PDF title is OCR-mangled or truncated
-    but whose order is unambiguous. Returns {pdf_index: optica_record}."""
+    but whose order is unambiguous. Returns {pdf_index: schedule_record}."""
     pairs: list[tuple[float, int, int]] = []
     for i, pt in enumerate(pdf_talks):
         nt = _norm_title(pt.get("title", ""))
@@ -3225,7 +3225,7 @@ def _load_web_enrichment() -> dict:
     enrich: dict = {
         "plenary": {}, "workshops": {}, "student": {},
         "industry": {}, "social": {}, "lab_tours": [],
-        "optica": {"by_code": {}, "by_title": {}, "n_pres": 0},
+        "event_schedule": {"by_code": {}, "by_title": {}, "n_pres": 0},
         "agenda": {"rooms_by_code": {}, "events": []},
     }
 
@@ -3300,12 +3300,12 @@ def _load_web_enrichment() -> dict:
         log(f"[warn] lab-tours HTML not found; the lab-tours session will "
             f"be emitted as a single SKELETON entry with no talk options.")
 
-    present = [p.name for p in INPUT_OPTICA_HTML if p.exists()]
+    present = [p.name for p in INPUT_EVENT_SCHEDULE_HTML if p.exists()]
     if present:
-        enrich["optica"] = _load_optica_enrichment()
+        enrich["event_schedule"] = _load_event_schedule()
         log(f"[info] event-site schedule : {len(present)} day page(s), "
-            f"{enrich['optica']['n_pres']} presentation(s) parsed "
-            f"({len(enrich['optica']['by_code'])} session code(s)).")
+            f"{enrich['event_schedule']['n_pres']} presentation(s) parsed "
+            f"({len(enrich['event_schedule']['by_code'])} session code(s)).")
     else:
         log(f"[warn] event-site schedule pages not found; oral talks keep their "
             f"PDF-only authors (no abstracts) and poster sessions stay empty.")
@@ -3785,10 +3785,10 @@ def main() -> None:
         #   * Poster-blitz sessions (the PDF lists no individual posters, so
         #     these come through empty): populate them from the schedule poster
         #     list for the matching session title.
-        optica = enrich.get("optica") or {}
-        osess = optica.get("by_code", {}).get(sid)
+        event_schedule = enrich.get("event_schedule") or {}
+        osess = event_schedule.get("by_code", {}).get(sid)
         if osess and talks_for_session:
-            matches = _match_optica_talks(
+            matches = _match_event_talks(
                 talks_for_session, osess["presentations"])
             for i, tk in enumerate(talks_for_session):
                 op = matches.get(i)
@@ -3805,7 +3805,7 @@ def main() -> None:
                 if op["code"]:
                     tk["code"] = op["code"]
         elif sess.get("type") == "Poster Blitz" and not talks_for_session:
-            posters = optica.get("by_title", {}).get(
+            posters = event_schedule.get("by_title", {}).get(
                 _norm_title(s_obj["title"]))
             if posters:
                 for op in posters["presentations"]:

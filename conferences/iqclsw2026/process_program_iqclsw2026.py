@@ -21,7 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-"""process_program_iqclsw2026.py — turn the IQCLSW 2026 program text into the
+"""process_program_iqclsw2026.py — turn the program text into the
 clean, source-agnostic conference_data.json that build_conference_app.py wants.
 
 Input  (data/detailed_program.txt, written by fetch_program_iqclsw2026.py):
@@ -47,7 +47,7 @@ Output (conference_data.json, beside this script):
 
 Design notes for THIS conference:
 
-  * IQCLSW is a small single-track school/workshop: there are no parallel
+  * The conference is a small single-track school/workshop: there are no parallel
     rooms, no presiders, no paper numbers, and no per-talk abstracts on the
     page. Every value the builder reads but the source doesn't carry is emitted
     as a well-typed empty (""/[]/false) so the app renders gracefully.
@@ -1270,9 +1270,8 @@ def build_conference_data() -> dict:
         _flush_tech()   # end-of-day: flush any trailing technical run
 
     # Suffix-number any session NAME shared by more than one technical session
-    # (e.g. Wednesday's split Workshop run -> "Quantum cascade lasers dynamics
-    # and combs 1" / "… 2"). Sessions keep first-seen order; titles that are
-    # unique are left untouched.
+    # (e.g. a split Workshop run on one day -> "Topic name 1" / "Topic name 2").
+    # Sessions keep first-seen order; titles that are unique are left untouched.
     from collections import Counter as _Counter
     _tech = [s for s in sessions if s["type"] in ("School", "Workshop")]
     _title_counts = _Counter(s["title"] for s in _tech)
@@ -1427,7 +1426,7 @@ def _collapse_session_tags(sessions):
 
 def main() -> None:
     data = build_conference_data()
-    # IQCLSW carries no session tags: the legacy type ("School"/"Workshop"/
+    # This conference carries no session tags: the legacy type ("School"/"Workshop"/
     # "General"/"Posters") restates the title, and the topic was a bare
     # ordinal. Strip both so sessions emit no tags line.
     for _s in data["sessions"]:

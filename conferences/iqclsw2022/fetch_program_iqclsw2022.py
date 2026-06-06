@@ -23,7 +23,7 @@
 
 """fetch_program_iqclsw2022.py — DOWNLOAD ONLY.
 
-The "downloader" half of the IQCLSW 2022 pipeline. The IQCLSW 2022 program is
+The "downloader" half of the pipeline. The conference program is
 published on the conference website as three static artifacts:
 
     Program_IQCLSW2022.pdf   the full program (cover + day-by-day schedule +
@@ -50,7 +50,7 @@ pages enrich what the PDF prints:
 The PDF URL on the conference site carries the upload date in its filename
 (.../2022/08/Program_IQCLSW2022_LIN_chair20220822.pdf), which would change if
 the organisers ever re-publish — but unlike a rolling annual programme, the
-2022 program is now archival, so the URL is stable. We hard-code it; if it
+program is now archival, so the URL is stable. We hard-code it; if it
 ever 404s the data_requirements manifest carries the manual-download fallback.
 
 Contacts the network only; launches no browser. The processor
@@ -88,7 +88,7 @@ ARTIFACTS = [
     },
 ]
 
-# Polite UA — some CMS installs 403 the default urllib UA string.
+# Polite UA — some CMS-hosted sites 403 the default urllib UA string.
 UA = "Mozilla/5.0 (iqclsw2022-fetch; fine-conference-app)"
 
 
@@ -100,7 +100,7 @@ def _fetch_bytes(url: str) -> bytes:
 
 def main() -> None:
     print("=" * 72)
-    print("[config] IQCLSW 2022 DOWNLOADER starting up.")
+    print("[config] conference program DOWNLOADER starting up.")
     print(f"[config]   script dir : {SCRIPT_DIR}")
     print(f"[config]   data dir   : {DATA_DIR}")
     print("=" * 72)

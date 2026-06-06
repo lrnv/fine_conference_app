@@ -21,14 +21,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-"""fetch_program_iqclsw2026.py — download the IQCLSW 2026 detailed program.
+"""fetch_program_iqclsw2026.py — download the detailed program.
 
-The IQCLSW 2026 program lives on ONE static CMS page:
+The program lives on ONE static CMS-hosted page:
 
     https://iqclsw2026.com/index.php/detailed-program/
 
 The whole program (every day, every talk, the full poster list) is rendered
-into that single page, so unlike a paginated conference scheduler there is
+into that single page, so unlike a paginated event-site schedule there is
 nothing to click through — we just need the page as a browser would see it.
 
 The site rejects plain HTTP clients (it answers a bare `requests.get` with
@@ -39,7 +39,7 @@ content to settle, and save TWO artifacts into data/:
     re-parsing if the text extraction ever needs to change), and
   - detailed_program.txt  : the visible text of the program region only
     (`innerText` of the main content container). This is the file the processor
-    actually parses — it is far more stable than the CMS/a CMS page builder markup,
+    actually parses — it is far more stable than the CMS-hosted page markup,
     whose wrapper class names churn between theme updates.
 
 Both files are listed in data_requirements_iqclsw2026.txt; the processor only
@@ -100,11 +100,11 @@ def run_in_subprocess() -> bool:
     PARENT (which has just waited on the child and should now return), False in
     the freshly-spawned CHILD (which should do the real work).
     """
-    if os.environ.get("IQCLSW_FETCH_CHILD") == "1":
+    if os.environ.get("FETCH_CHILD") == "1":
         return False  # we ARE the child — proceed with the download.
     import subprocess
 
-    env = dict(os.environ, IQCLSW_FETCH_CHILD="1", PYTHONUNBUFFERED="1")
+    env = dict(os.environ, FETCH_CHILD="1", PYTHONUNBUFFERED="1")
     print("[fetch] re-spawning a clean child process for Playwright …",
           flush=True)
     rc = subprocess.call([sys.executable, str(Path(__file__).resolve())],

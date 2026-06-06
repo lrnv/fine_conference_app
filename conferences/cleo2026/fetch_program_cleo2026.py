@@ -24,8 +24,8 @@
 """
 fetch_program_cleo2026.py — DOWNLOAD ONLY.
 
-The "downloader" half of the CLEO 2026 pipeline: it does nothing but DOWNLOAD
-the raw CLEO 2026 source material and save it to disk. It performs NO parsing
+The "downloader" half of the pipeline: it does nothing but DOWNLOAD
+the raw source material and save it to disk. It performs NO parsing
 and produces NO conference_data.json. Run the companion
 process_program_cleo2026.py afterwards to turn what this saves into the final
 conference_data.json.
@@ -40,7 +40,7 @@ What it downloads / saves (all into a data/ subdirectory next to this script):
                                           row, and "See More…" link has been
                                           expanded. This is the reproducibility
                                           anchor the processor re-parses offline.
-  4. CLEO2026_short_courses.html       — the public CLEO short-courses page
+  4. CLEO2026_short_courses.html       — the event-site short-courses page
                                           (raw HTML), which lists each short
                                           course's instructor and affiliation.
 
@@ -49,7 +49,7 @@ How it works
 1. Bootstraps Playwright + Chromium on first run.
 2. Spawns a clean Python subprocess so Playwright's sync API doesn't fight
    Spyder / IPython's asyncio loop.
-3. Opens a Chromium window at the CLEO 2026 planner with a persistent profile
+3. Opens a Chromium window at the conference planner with a persistent profile
    in .chrome_profile/ next to this script. Headless by default; flip the
    module-level HEADLESS flag to False to watch it run in a visible window.
 4. Auto-waits for the planner's program to render (no manual ENTER needed).
@@ -115,7 +115,7 @@ HEADLESS = True
 
 BROWSE_URL = "https://cleo2026.abstractcentral.com/planner.jsp"
 
-# Public CLEO website page listing the short courses with their instructors
+# Event-site page listing the short courses with their instructors
 # and affiliations. The planner's in-app "View Event Details" popup only gives
 # the instructor name (no affiliation) and is flaky to scrape, so we save this
 # richer page's HTML for the processor to read.
@@ -739,7 +739,7 @@ def _clear_profile() -> None:
 
 def main() -> None:
     log("=" * 72)
-    log("[config] CLEO 2026 DOWNLOADER starting up.")
+    log("[config] DOWNLOADER starting up.")
     log(f"[config]   script dir          : {SCRIPT_DIR}")
     log(f"[config]   data dir            : {DATA_DIR}")
     log(f"[config]   browse URL          : {BROWSE_URL}")
@@ -821,8 +821,8 @@ def main() -> None:
 
             # ---------------- Step 4: short-courses page HTML ----------
             # Short courses have no inline talks and no presider; their
-            # instructor (and affiliation) lives on the public CLEO short-
-            # courses website. Save that page's raw HTML so the processor can
+            # instructor (and affiliation) lives on the event-site short-
+            # courses page. Save that page's raw HTML so the processor can
             # parse the SC<code> -> instructor map offline.
             log("[4/4] Saving the public short-courses page HTML…")
             save_short_courses_html(page)

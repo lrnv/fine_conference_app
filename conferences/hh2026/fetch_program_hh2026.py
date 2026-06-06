@@ -23,18 +23,18 @@
 
 """fetch_program_hh2026.py — DOWNLOAD ONLY.
 
-The "downloader" half of the Hilton Head 2026 pipeline. The entire Hilton Head
-2026 program is published as a single public PDF — the Final Program — linked
+The "downloader" half of the conference pipeline. The entire conference
+program is published as a single public PDF — the Final Program — linked
 from the conference site:
 
     https://www.hh2026.org/files/HiltonHead2026_Program.pdf
 
 That one PDF is the authoritative, self-contained source for everything the app
 needs: the Special Events descriptions, the Sunday-through-Thursday day-by-day
-schedule, and the three Poster Presentation sessions. There is no planner,
-CSV export, or per-talk abstract book to reconcile, so this fetcher simply
-downloads that PDF into data/ and the processor (process_program_hh2026.py)
-runs entirely offline against it.
+schedule, and the three Poster Presentation sessions. There is no conference
+planner, CSV export, or per-talk abstract book to reconcile, so this fetcher
+simply downloads that PDF into data/ and the processor
+(process_program_hh2026.py) runs entirely offline against it.
 
 The URL carries no rolling date suffix, so it is fetched directly. Contacts the
 network only via urllib.
@@ -66,7 +66,7 @@ def _fetch_bytes(url: str) -> bytes:
 
 def main() -> None:
     print("=" * 72)
-    print("[config] HILTON HEAD 2026 DOWNLOADER starting up.")
+    print("[config] CONFERENCE DOWNLOADER starting up.")
     print(f"[config]   script dir : {SCRIPT_DIR}")
     print(f"[config]   data dir   : {DATA_DIR}")
     print(f"[config]   program URL: {PROGRAM_URL}")

@@ -21,7 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-"""process_program_otst2026.py — turn the OTST 2026 program PDF into the clean,
+"""process_program_otst2026.py — turn the conference program PDF into the clean,
 source-agnostic conference_data.json that build_conference_app.py wants.
 
 Input  (data/Full_Program_OTST_2026.pdf, written by fetch_program_otst2026.py):

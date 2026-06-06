@@ -25,7 +25,7 @@
 fetch_program_test2026.py — DOWNLOAD ONLY.
 
 TEST 2026 is a SYNTHETIC example conference. Unlike the real conferences in this
-repository (e.g. cleo2026), it has no live website to scrape: its one and only
+repository, it has no live website to scrape: its one and only
 source file is a fixed, synthetic abstract book that ships WITH the repository.
 
 That source PDF lives next to this script as

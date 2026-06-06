@@ -24,8 +24,8 @@
 """
 fetch_program_cleo2025.py — DOWNLOAD ONLY.
 
-The "downloader" half of the CLEO 2025 pipeline: it does nothing but
-DOWNLOAD the raw CLEO 2025 source material and save it to disk. It performs NO
+The "downloader" half of the conference pipeline: it does nothing but
+DOWNLOAD the raw source material and save it to disk. It performs NO
 parsing and produces NO conference_data.json. Run the companion
 process_program_cleo2025.py afterwards to turn what this saves into the final
 conference_data.json.
@@ -38,7 +38,7 @@ What it downloads / saves (all into a data/ subdirectory next to this script):
   3. CLEO2025_planner_expanded.html    — the planner page DOM (outerHTML) captured
                                           AFTER every DAY row, session row, and
                                           "See More…" link has been expanded.
-  4. CLEO2025_short_courses.html       — the archived CLEO 2025 short-courses page
+  4. CLEO2025_short_courses.html       — the archived short-courses page
                                           (raw HTML), whose <h2>/<h3>/<h4> blocks
                                           give course title / instructor /
                                           affiliation.
@@ -48,10 +48,11 @@ How it works
 1. Bootstraps Playwright + Chromium on first run.
 2. Spawns a clean Python subprocess so Playwright's sync API doesn't fight
    Spyder / IPython's asyncio loop.
-3. Opens a Chromium window at the CLEO 2025 entry page (planner.jsp) with a
-   persistent profile in .chrome_profile/ next to this script, then clicks the
-   "Planner" link to reach the expandable program. Headless by default; flip
-   the module-level HEADLESS flag to False to watch it run in a visible window.
+3. Opens a Chromium window at the conference planner entry page (planner.jsp)
+   with a persistent profile in .chrome_profile/ next to this script, then
+   clicks the "Planner" link to reach the expandable program. Headless by
+   default; flip the module-level HEADLESS flag to False to watch it run in a
+   visible window.
 4. Auto-waits for the planner's program to render (no manual ENTER needed).
 5. Clicks the two "Program + Abstracts" download buttons (PDF + Excel) and
    saves both files. (If a button can't be found / a download fails, it warns
@@ -103,7 +104,7 @@ HEADLESS = True
 # Navigation entry point. We start at the stable planner.jsp page and click the
 # "Planner" link, which navigates to the JavaScript page where the day/session
 # tree lives. This avoids the old signed deep-link whose PARAMS=... token expired.
-ENTRY_URL = "https://cleo2025.abstractcentral.com/planner.jsp"
+ENTRY_URL = "https://cleo2025.abstractcentral.com/planner.jsp"  # conference planner host
 
 # Visible text of the link/button on ENTRY_URL that takes us to the expandable
 # program. Matched case-insensitively against links and buttons.
@@ -113,7 +114,7 @@ PLANNER_LINK_TEXT = "Planner"
 # "Planner" click flow ever fails. Leave as "" to disable the fallback.
 BROWSE_URL = ""
 
-# Archived CLEO 2025 short-courses page (the live page now shows 2026). Each
+# Archived short-courses page (the live page now shows a later year). Each
 # course is a styled block whose <h2> is the course title, <h3> the instructor,
 # and <h4> the instructor's affiliation. We save the raw HTML; the processor
 # matches courses to planner sessions by course TITLE (the page has no SC codes).
@@ -859,7 +860,7 @@ def save_short_courses_html(page) -> None:
 # =============================================================================
 def main() -> None:
     log("=" * 72)
-    log("[config] CLEO 2025 DOWNLOADER starting up.")
+    log("[config] DOWNLOADER starting up.")
     log(f"[config]   script dir          : {SCRIPT_DIR}")
     log(f"[config]   data dir            : {DATA_DIR}")
     log(f"[config]   entry URL           : {ENTRY_URL}")

@@ -21,7 +21,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-"""process_program_iqclsw2022.py — turn the IQCLSW 2022 PDF program + two HTML
+"""process_program_iqclsw2022.py — turn the conference PDF program + two HTML
 companion pages into the clean, source-agnostic conference_data.json the
 shared build_conference_app.py expects.
 
@@ -90,7 +90,7 @@ Design notes for THIS conference:
     the end of the PDF lists 32 posters numbered 1..32; each entry is a dot-
     separated "<Authors>. <Title>" run wrapped across two-or-three lines. We
     split that catalog in half across the two real scheduled poster sessions
-    (Thursday 17:30 and Friday 17:30), exactly as iqclsw2026 does.
+    (Thursday 17:30 and Friday 17:30), exactly as the sibling processors do.
 
   * Affiliation sources. Every affiliation we recover from TutorialSpeakers.html
     is pooled into the flat affiliation_sources list so the builder's
@@ -135,7 +135,7 @@ def log(msg: str) -> None:
 # =============================================================================
 # Type / color registries (baked into the JSON; the app reads these directly).
 # `id` is the color token the app filters and groups on, AND the token each
-# session/talk's `color` field must use. The IQCLSW 2022 program slices into
+# session/talk's `color` field must use. The conference program slices into
 # five talk genres (Tutorial / Keynote / Invited / Contributed / Poster) plus
 # generic housekeeping items; sessions are coloured by their dominant talk
 # genre (or by the divider's role) using the same tokens.
@@ -172,7 +172,7 @@ TALK_TYPES = [
 
 # -----------------------------------------------------------------------------
 # Bootstrap: pdfplumber is the PDF text extractor we standardise on across the
-# repo (CLEO 2026 and ECIO 2026 already require it). Install on demand so a
+# repo (sibling conference processors already require it). Install on demand so a
 # fresh check-out builds with nothing more than `pip install pdfplumber lxml`.
 # -----------------------------------------------------------------------------
 def _bootstrap_pdfplumber() -> None:
@@ -207,8 +207,8 @@ def _load_pdf_lines() -> list[str]:
                 s = re.sub(r"[ \t]+", " ", s).strip()
                 if s:
                     lines.append(s)
-    # Drop the cover-page banner ("International Quantum Cascade School and
-    # Workshop 2022", "ETH Zürich-Monte Verità, …", "Sponsored by:") — it
+    # Drop the cover-page banner (the spelled-out conference title,
+    # "ETH Zürich-Monte Verità, …", "Sponsored by:") — it
     # never carries program content.
     cover_re = re.compile(
         r"^(international quantum cascade|eth z.?rich-monte|sponsored by)",
@@ -864,7 +864,7 @@ def build_conference_data() -> dict:
             "status": "Sessioned",
             "withdrawn": False,
             "first_author": full_name,
-            "last_author": "",   # single-author talks: keep empty (see iqclsw2026)
+            "last_author": "",   # single-author talks: keep empty (sibling convention)
             "color": color,
             "location": "",
         }
@@ -1112,7 +1112,7 @@ def build_conference_data() -> dict:
     # for the builder's affiliation map.
     affiliation_pool: set[str] = set(aff_pool)
     # Split ";"-joined lists at the source (none in this dataset, but kept for
-    # parity with the iqclsw2026 processor).
+    # parity with the sibling conference processors).
     for v in list(affiliation_pool):
         for piece in v.split(";"):
             p = piece.strip()
@@ -1161,7 +1161,7 @@ def _collapse_session_tags(sessions):
 
 def main() -> None:
     data = build_conference_data()
-    # IQCLSW carries no session tags: the legacy type ("School"/"Workshop"/
+    # This conference carries no session tags: the legacy type ("School"/"Workshop"/
     # "General"/"Posters") restates the title, and the topic was a bare
     # ordinal. Strip both so sessions emit no tags line.
     for _s in data["sessions"]:

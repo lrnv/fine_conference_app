@@ -21,10 +21,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-"""fetch_program_otst2026.py — download the OTST 2026 program sources.
+"""fetch_program_otst2026.py — download the conference program sources.
 
-OTST 2026 (the 11th International Conference on Optical Terahertz Science and
-Technology, Duke University) publishes a small static HTML site. Everything the
+The conference publishes a small static HTML site. Everything the
 app needs comes from three files on it:
 
   - assets/Full_Program_OTST_2026.pdf  (REQUIRED) — the full day-by-day program;

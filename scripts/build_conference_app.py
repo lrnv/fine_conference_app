@@ -1589,7 +1589,7 @@ def _strip_stray_trailing_bracket(s: str) -> str:
     return re.sub(r"\s*[<>]+\s*$", "", s).rstrip()
 
 
-# --- Chemical-formula subscripts (ported from the ECIO 2026 processor) -------
+# --- Chemical-formula subscripts (centralized from a conference processor) ---
 # All IUPAC element symbols (1- and 2-letter). Membership is case-sensitive at
 # the call site (symbol must start uppercase, second letter lowercase).
 _ELEMENT_SYMBOLS = {
@@ -1752,7 +1752,7 @@ def _subscriptize_formulas(title: str) -> str:
     return "".join(out)
 
 
-# --- Location tidying (ported from the SPIE PW 2025 processor) ---------------
+# --- Location tidying (centralized from a conference processor) --------------
 def _clean_location(loc: str) -> str:
     """Tidy a room/location string: collapse whitespace, collapse repeated
     parentheses, and balance a stray trailing ')' (a source occasionally
@@ -1767,7 +1767,7 @@ def _clean_location(loc: str) -> str:
     return loc.strip()
 
 
-# --- ALL-CAPS title casing (ported from the SPIE PW / Hilton Head processors)
+# --- ALL-CAPS title casing (centralized from conference processors) ----------
 # A program that prints titles in ALL CAPS still writes its acronyms in normal
 # mixed case elsewhere (other titles, session details, institution names), so
 # that correctly-cased text is a ready-made dictionary of how each acronym is
@@ -5679,8 +5679,8 @@ function fitByline(subEl, item, chipPrefix = "") {
        happens. Visible subs are refit immediately; off-screen ones get
        refit when they scroll into view (the observer callback checks
        _fitGen and refits if stale).
-   At the original ECIO scale (~160 talks) the old eager refit was already
-   cheap; this only matters at conference scales like CLEO (~1900 talks). */
+   At small conference scales (~a few hundred talks) the old eager refit was
+   already cheap; this only matters at large scales (~a few thousand talks). */
 let _bylineFitGen = 0;
 const _bylineObservers = new WeakMap();   // root element -> IntersectionObserver
 const _bylineVisible   = new WeakMap();   // root element -> Set<subEl>

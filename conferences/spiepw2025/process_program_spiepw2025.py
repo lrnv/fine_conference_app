@@ -23,22 +23,22 @@
 
 """process_program_spiepw2025.py — PARSE ONLY (no network).
 
-Reads the single SPIE Photonics West 2025 "Technical Program" PDF from data/ and
+Reads the single "Technical Program" PDF for the conference from data/ and
 emits conference_data.json (the source-agnostic schema in
 docs/CONFERENCE_JSON.md) for the shared builder.
 
 SOURCE FORMAT
 -------------
-The PDF lays out, per SPIE conference (a 5-digit conference number), a header
+The PDF lays out, per sub-conference (a 5-digit conference number), a header
 block followed by a sequence of sessions and talks. Every line type is
 recognizable by SHAPE, never by its content. The schematic below uses entirely
 INVENTED placeholders — no real program titles, names, or affiliations appear
 in this source file (see scripts/AGENTS.md: program content is copyrighted and
 must stay in data/, not in tracked code, even in comments):
 
-  CONFERENCE NNNNN                         <- new conference (all caps, alone)
-  <Conference Title> YYYY                  <- conference title (1+ lines)
-  D - D Month YYYY | <Venue, Room ...>     <- conference date range + room
+  CONFERENCE NNNNN                         <- new sub-conference (all caps, alone)
+  <Conference Title> YYYY                  <- sub-conference title (1+ lines)
+  D - D Month YYYY | <Venue, Room ...>     <- sub-conference date range + room
   Conference Chair(s): <Name>, <Aff> (<Country>); ...
   Program Committee: <Name>, <Aff> (<Country>); ...
   <Weekday> D Month YYYY                   <- day separator
@@ -54,10 +54,10 @@ hot-topics sessions use special UPPERCASE headers (e.g. "<SYMPOSIUM> HOT TOPICS"
 "<SYMPOSIUM> PLENARY"). Coffee/Lunch breaks appear as inline non-talk lines and
 are skipped. The running page header "Conference NNNNN" (title case) and the
 footer "N of M <Symposium> Generated: ..." are stripped; the footer is also how
-each conference's symposium (BiOS / LASE / OPTO / Quantum West) is identified.
+each sub-conference's symposium is identified.
 
-Plenary and hot-topics SESSIONS are reprinted inside many conference sections
-(a hot-topics talk whose number belongs to one conference is reprinted under
+Plenary and hot-topics SESSIONS are reprinted inside many sub-conference sections
+(a hot-topics talk whose number belongs to one sub-conference is reprinted under
 others), so talks are de-duplicated globally by paper number and sessions by
 (title, start, location); session membership is unioned across reprints.
 
@@ -161,7 +161,7 @@ DAY = re.compile(r"^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday) "
 TALK = re.compile(r"^(\d{4,5}-\w+)\s+•\s+(\d{1,2}:\d{2}\s*[AP]M)\s*-\s*"
                   r"(\d{1,2}:\d{2}\s*[AP]M)\s*$")
 # A break/meal announcement line, e.g. "Coffee Break 10:30 AM - 11:00 AM" or
-# "Lunch/BiOS Exhibition Break 11:55 AM - 1:30 PM" (the symposium name varies).
+# "Lunch/<Symposium> Exhibition Break 11:55 AM - 1:30 PM" (the symposium varies).
 BREAK = re.compile(
     r"^(?:(?:Coffee|Lunch|Morning|Afternoon|Networking|Tea|Refreshment)\b.*?"
     r"\bBreak\b|Break\b)", re.IGNORECASE)
@@ -454,8 +454,8 @@ def _paren_open(buf: list[str]) -> bool:
 
 def _headerish(line: str) -> bool:
     """True for an UPPERCASE session-title line (or a wrapped continuation of
-    one). SPIE renders every session title in uppercase, while talk titles,
-    author lines, and affiliations are mixed case."""
+    one). The source renders every session title in uppercase, while talk
+    titles, author lines, and affiliations are mixed case."""
     letters = [c for c in line if c.isalpha()]
     if len(letters) < 3:
         return False
@@ -862,8 +862,8 @@ class Parser:
 
 def _union_session_talks(talks: dict, keep: dict, sess: dict) -> None:
     """Move sess's talks into keep (de-duplicated by paper number) and redirect
-    those talks' session_id to keep. Shared by the cross-conference reprint merge
-    and the co-located poster merge."""
+    those talks' session_id to keep. Shared by the cross-sub-conference reprint
+    merge and the co-located poster merge."""
     for tid in sess["talk_ids"]:
         num = tid[len("T-"):]
         if num not in keep["_talk_nums"]:
@@ -877,10 +877,10 @@ def _union_session_talks(talks: dict, keep: dict, sess: dict) -> None:
 def _combine_poster_tags(group: list[dict]) -> None:
     """Rebuild the surviving (first) poster session's tags by unioning each tag
     key's values across the whole co-located group, joined into a comma-separated
-    list in first-seen order. SPIE runs every conference's poster session in one
+    list in first-seen order. Every sub-conference's poster session runs in one
     shared hall at one time, so the merged session credits all of them: the
     Conference tag becomes "<num: title>, <num: title>, ..." and Symposium likewise
-    when the posters span symposia. De-duplication is by FULL value — conference
+    when the posters span symposia. De-duplication is by FULL value — sub-conference
     titles themselves contain commas, so a comma-split would corrupt them."""
     keep = group[0]
     values: dict[str, list[str]] = {}
@@ -923,9 +923,9 @@ def run(pdf_path: Path) -> dict:
 
     talks = list(p.talks.values())
 
-    # Merge cross-conference reprinted sessions. A special session (an evening
+    # Merge cross-sub-conference reprinted sessions. A special session (an evening
     # plenary, hot-topics, joint, or "focus" session) is printed in EACH
-    # participating conference's pages; because talks are de-duplicated globally
+    # participating sub-conference's pages; because talks are de-duplicated globally
     # by paper number, each reprint holds a DIFFERENT subset of the talks (and
     # some reprints hold none). Collapse every group of sessions sharing the same
     # (normalized title, start, room) into one, unioning their talks and
@@ -945,13 +945,13 @@ def run(pdf_path: Path) -> dict:
         _union_session_talks(p.talks, keep, sess)
         merged_away.add(sess["id"])
 
-    # Poster sessions get a parallel merge. SPIE schedules every conference's
-    # poster session into the SAME room at the SAME time — physically one big
-    # poster hall — yet prints each under its own conference number. Collapse all
-    # posters sharing (start, room) into one (ignoring the per-conference title),
-    # unioning their talks and combining the per-conference Symposium/Conference
+    # Poster sessions get a parallel merge. Every sub-conference's poster session
+    # is scheduled into the SAME room at the SAME time — physically one big
+    # poster hall — yet printed under its own sub-conference number. Collapse all
+    # posters sharing (start, room) into one (ignoring the per-sub-conference title),
+    # unioning their talks and combining the per-sub-conference Symposium/Conference
     # tags into comma-separated lists so the survivor credits every participating
-    # conference (see _combine_poster_tags). Distinct one-off poster events
+    # sub-conference (see _combine_poster_tags). Distinct one-off poster events
     # (award talks, "poster pop", review sessions) sit at a unique time+room, so
     # they form singleton groups and pass through untouched.
     poster_groups: dict[tuple, list[dict]] = {}
@@ -1014,7 +1014,7 @@ def run(pdf_path: Path) -> dict:
 
 def main() -> None:
     print("=" * 72)
-    print("[config] SPIE Photonics West 2025 PROCESSOR")
+    print("[config] conference program PROCESSOR")
     print(f"[config]   input PDF : {INPUT_PDF}")
     print(f"[config]   output    : {OUTPUT_JSON}")
     print("=" * 72)

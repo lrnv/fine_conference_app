@@ -23,7 +23,7 @@
 
 """fetch_program_ecio2026.py — DOWNLOAD ONLY.
 
-The "downloader" half of the ECIO 2026 pipeline. The full ECIO 2026 program is
+The "downloader" half of the conference pipeline. The full program is
 published as two PDFs linked from the public programme page,
 
     https://www.ecio-conference.org/programme-26/
@@ -44,7 +44,7 @@ We also save the Agenda-of-Sessions PDF,
                                   venues, the student-event rooms) and the daily
                                   Registration/Coffee/Lunch rows.
 
-This file is not linked from the CMS programme page; it is served from
+This file is not linked from the CMS-hosted programme page; it is served from
 the publisher's media CDN at a fixed path, so we fetch it directly (and treat it
 as optional — its CDN path can rotate).
 
@@ -54,7 +54,7 @@ We also save a third artifact, the invited-speakers HTML page,
                                   as (Name, Affiliation, Talk Title) triples.
 
 The detailed schedule PDF prints only the speaker's name in each cell, with no
-affiliation; the invited-speakers page is the one public ECIO source that
+affiliation; the invited-speakers page is the one public conference source that
 attaches an affiliation to those speaker names, so we cache it here for the
 processor to cross-reference when filling talk institutions.
 
@@ -63,7 +63,7 @@ The PDF filenames on the website carry the re-issue date in their suffix
 organisers publish a refresh, so we do NOT hard-code those URLs. Instead we
 scrape the programme page itself and pick the most recent matching PDF link
 by the date encoded in its filename. This way the fetcher keeps working when
-ECIO publishes an updated version of either PDF. The invited-speakers page,
+the organisers publish an updated version of either PDF. The invited-speakers page,
 in contrast, lives at a fixed URL and is fetched directly.
 
 Finally, we render and save the three per-day schedule pages
@@ -75,7 +75,7 @@ PDFs, carry the COMPLETE author list (with affiliations) and the abstract for
 every talk. That schedule is a JavaScript single-page app behind bot protection,
 so this part drives a real headed Chromium via Playwright (switching to
 "Detailed View" and expanding every "Continue Reading" link before saving the
-rendered HTML) rather than a plain HTTP fetch. See `_fetch_optica_schedule`.
+rendered HTML) rather than a plain HTTP fetch. See `_fetch_event_schedule`.
 
 We also save the fully-expanded conference-planner DOM,
 
@@ -142,7 +142,7 @@ ARTIFACTS = [
         # detailed schedule, prints the LOCATION of every non-talk event
         # (registration desk, coffee/lunch foyers, the reception/gala venues,
         # the student-event rooms) and the daily Registration/Coffee/Lunch rows.
-        # It is NOT linked from the CMS programme page; it is served from
+        # It is NOT linked from the CMS-hosted programme page; it is served from
         # the publisher's media CDN at a fixed path. `required: no` — the processor
         # falls back to detailed-schedule locations when it's absent.
         "url": (
@@ -155,7 +155,7 @@ ARTIFACTS = [
     },
     {
         "name": "ECIO26_InvitedSpeakers.html",
-        # Fixed URL — the invited-speakers page is the only public ECIO source
+        # Fixed URL — the invited-speakers page is the only public conference source
         # that ties each invited speaker's name to an affiliation.
         "url": "https://www.ecio-conference.org/invited-speakers-2/",
         "desc": "invited speakers page",
@@ -205,7 +205,7 @@ ARTIFACTS = [
 # show up). Year is assumed 2026.
 DATE_RE = re.compile(r"_(\d{1,2})_(\d{1,2})\.pdf$", re.IGNORECASE)
 
-# Polite UA — some WP installs 403 the default urllib UA.
+# Polite UA — some CMS installs 403 the default urllib UA.
 UA = "Mozilla/5.0 (ecio2026-fetch; fine-conference-app)"
 
 # ---------------------------------------------------------------------------
@@ -226,27 +226,27 @@ UA = "Mozilla/5.0 (ecio2026-fetch; fine-conference-app)"
 # realistic UA; if a CAPTCHA ever appears we leave the window open and wait so
 # the user can solve it. A persistent browser profile (kept outside the repo)
 # carries any clearance cookie across runs.
-OPTICA_SCHEDULE_URL = (
+EVENT_SCHEDULE_URL = (
     "https://www.optica.org/events/topical_meetings/"
     "european_conference_on_integrated_optics_(ecio)/schedule/#/"
 )
 # Day -> saved filename. The day names are the schedule's own hash routes, not
 # program content.
-OPTICA_DAYS = {
+EVENT_SCHEDULE_DAYS = {
     "Monday": "ECIO26_OpticaMonday.html",
     "Tuesday": "ECIO26_OpticaTuesday.html",
     "Wednesday": "ECIO26_OpticaWednesday.html",
 }
 # Real-browser UA for the headed Chromium (the bot wall blocks the headless
 # default UA). Run headed so the user can solve a CAPTCHA if one ever appears.
-OPTICA_UA = (
+EVENT_SCHEDULE_UA = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
 )
-OPTICA_PROFILE_DIR = Path.home() / ".cache" / "ecio2026_optica_profile"
+EVENT_SCHEDULE_PROFILE_DIR = Path.home() / ".cache" / "ecio2026_optica_profile"
 # How long to wait (seconds) for a human to clear a bot-wall / CAPTCHA before
 # giving up on a day. Generous because solving it is a manual step.
-OPTICA_CAPTCHA_WAIT_S = 180
+EVENT_SCHEDULE_WALL_WAIT_S = 180
 
 
 # ---------------------------------------------------------------------------
@@ -346,7 +346,7 @@ def _planner_expand_everything(page, max_outer_rounds=8) -> None:
     clicks, refreshing the id snapshot before each phase so we never depend on
     positional locators against a mutating DOM. Sessions are expanded in small
     batches with a hourglass-settle wait between them, then a one-at-a-time
-    mop-up handles any stragglers. Ported from the CLEO 2026 fetcher."""
+    mop-up handles any stragglers. Ported from a sibling fetcher."""
     for outer in range(max_outer_rounds):
         p = _planner_pending_ids(page)
         nd, ns, nm, nh = (len(p["day_pluses"]), len(p["session_pluses"]),
@@ -476,7 +476,7 @@ def _fetch_planner_dom() -> bool:
 
 def _bootstrap_playwright() -> None:
     """Ensure the 'playwright' package and its Chromium browser are installed.
-    Mirrors the CLEO fetchers' bootstrap so a fresh checkout self-provisions."""
+    Mirrors the sibling fetchers' bootstrap so a fresh checkout self-provisions."""
     try:
         import playwright  # noqa: F401
         from playwright.sync_api import sync_playwright  # noqa: F401
@@ -490,7 +490,7 @@ def _bootstrap_playwright() -> None:
         [sys.executable, "-m", "playwright", "install", "chromium"])
 
 
-def _fetch_optica_schedule() -> tuple[int, list[str]]:
+def _fetch_event_schedule() -> tuple[int, list[str]]:
     """Render and save the per-day event-site schedule pages.
 
     Returns (saved_count, failed_filenames). Never raises for a single day's
@@ -501,25 +501,25 @@ def _fetch_optica_schedule() -> tuple[int, list[str]]:
     import time
     from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
 
-    OPTICA_PROFILE_DIR.mkdir(parents=True, exist_ok=True)
+    EVENT_SCHEDULE_PROFILE_DIR.mkdir(parents=True, exist_ok=True)
     saved = 0
     failed: list[str] = []
     print("[info] rendering event-site schedule pages via headed Chromium "
           "(a browser window will open)…")
     with sync_playwright() as pw:
         ctx = pw.chromium.launch_persistent_context(
-            str(OPTICA_PROFILE_DIR),
+            str(EVENT_SCHEDULE_PROFILE_DIR),
             headless=False,
-            user_agent=OPTICA_UA,
+            user_agent=EVENT_SCHEDULE_UA,
             viewport={"width": 1400, "height": 1000},
             args=["--disable-blink-features=AutomationControlled"],
         )
         try:
             page = ctx.pages[0] if ctx.pages else ctx.new_page()
-            for day, fname in OPTICA_DAYS.items():
+            for day, fname in EVENT_SCHEDULE_DAYS.items():
                 target = DATA_DIR / fname
                 try:
-                    page.goto(OPTICA_SCHEDULE_URL + day,
+                    page.goto(EVENT_SCHEDULE_URL + day,
                               wait_until="domcontentloaded", timeout=60000)
                     # Bot wall: a headed browser normally passes, but if the
                     # bot-wall interstitial shows, wait for the user to clear it.
@@ -529,10 +529,10 @@ def _fetch_optica_schedule() -> tuple[int, list[str]]:
                         if waited == 0:
                             print(f"[warn]   {day}: bot-wall/CAPTCHA detected — "
                                   f"please solve it in the open browser window "
-                                  f"(waiting up to {OPTICA_CAPTCHA_WAIT_S}s)…")
+                                  f"(waiting up to {EVENT_SCHEDULE_WALL_WAIT_S}s)…")
                         time.sleep(3)
                         waited += 3
-                        if waited >= OPTICA_CAPTCHA_WAIT_S:
+                        if waited >= EVENT_SCHEDULE_WALL_WAIT_S:
                             raise PWTimeout("bot wall not cleared in time")
                     # Wait for the schedule to render its talk rows.
                     page.wait_for_selector("li.presentation", timeout=45000)
@@ -601,7 +601,7 @@ def _pick_latest(html: str, pat: re.Pattern[str]) -> str | None:
 
 def main() -> None:
     print("=" * 72)
-    print("[config] ECIO 2026 DOWNLOADER starting up.")
+    print("[config] conference DOWNLOADER starting up.")
     print(f"[config]   script dir   : {SCRIPT_DIR}")
     print(f"[config]   data dir     : {DATA_DIR}")
     print(f"[config]   programme URL: {PROGRAMME_URL}")
@@ -662,13 +662,13 @@ def main() -> None:
     # These are optional enrichment, so a failure here is a warning, not fatal.
     print("-" * 72)
     try:
-        opt_saved, opt_failed = _fetch_optica_schedule()
-        if opt_saved:
+        sched_saved, sched_failed = _fetch_event_schedule()
+        if sched_saved:
             saved_any = True
-        failed.extend(opt_failed)
+        failed.extend(sched_failed)
     except Exception as e:  # noqa: BLE001 — never let enrichment abort the run
         print(f"[warn] event-site schedule fetch failed entirely: {e}")
-        failed.extend(OPTICA_DAYS.values())
+        failed.extend(EVENT_SCHEDULE_DAYS.values())
 
     # Render + save the conference planner DOM (browser-driven). Optional
     # enrichment used only for the per-session presider map; a failure here is

@@ -32,9 +32,9 @@ example conference whose single source of truth is one PDF:
 This script reads ONLY that PDF (no HTML, no CSV, no network, no browser) and
 turns it into the same clean, FINAL conference_data.json that the shared
 downstream scripts (build_conference_app.py / build_affiliation_map.py)
-consume — exactly the JSON shape produced by the real cleo2026 processor.
+consume — exactly the JSON shape produced by a real conference's processor.
 
-The PDF has two regions, both authored to mirror CLEO's official book:
+The PDF has two regions, both authored to mirror a typical conference book:
 
   1. Program-schedule pages (right after the cover). One block per session: a
      session-header line — "<start>-<end>, <location>, <CODE>. <Title>, <Type>
@@ -43,8 +43,8 @@ The PDF has two regions, both authored to mirror CLEO's official book:
      the day -> session -> talk skeleton: ordering, per-talk times, status
      (Invited/Tutorial/Withdrawn) and presiders.
 
-  2. Abstract pages (one per non-withdrawn talk), in CLEO's exact abstract-page
-     geometry: a bold "Final ID:" line, a bold title, an italic author band with
+  2. Abstract pages (one per non-withdrawn talk), in a typical conference's
+     abstract-page geometry: a bold "Final ID:" line, a bold title, an italic author band with
      superscript affiliation markers and the speaker underlined, a numbered
      affiliation list, then a bold "Abstract (35 Word Limit):" body. These give
      the authoritative title, full author list, per-author affiliations, the
@@ -109,7 +109,7 @@ def _bootstrap_pdfplumber() -> None:
 # =============================================================================
 # PART A — Abstract-page parsing (geometry based).
 #
-# This is the SAME geometry-driven approach the cleo2026 processor uses: cluster
+# This is the SAME geometry-driven approach a real conference's processor uses: cluster
 # words into baseline rows by their `top`, treat a digits-only row sitting a few
 # points above a name row as that name's affiliation-marker superscripts, map
 # underlines onto the names they sit beneath to find the speaker, and read the
@@ -541,7 +541,7 @@ def _to_minutes(t: str) -> int:
 
 
 # =============================================================================
-# PART C — conference name from the cover page (same anchor logic as CLEO).
+# PART C — conference name from the cover page (same anchor logic as a real conference).
 # =============================================================================
 _COVER_HEADER = "program schedule and abstract book"
 _COVER_DATE_RE = re.compile(
@@ -573,8 +573,8 @@ def extract_conference_name(pdf_path: Path) -> str:
 
 # =============================================================================
 # PART D — affiliation-source extraction (consumed by build_affiliation_map.py).
-# Identical approach to CLEO: pull every full-address line "N. <body>." out of
-# the PDF text.
+# Identical approach to a real conference: pull every full-address line
+# "N. <body>." out of the PDF text.
 # =============================================================================
 PDF_AFFIL_START = re.compile(r"^\d{1,2}\.\s+(\S.*)$")
 
@@ -618,8 +618,8 @@ def extract_pdf_affiliations(pdf_path: Path) -> set[str]:
 
 
 # =============================================================================
-# PART E — shared helpers + type/color registries (mirroring CLEO's processor so
-# the JSON is byte-shape identical for the downstream builder).
+# PART E — shared helpers + type/color registries (mirroring a real conference's
+# processor so the JSON is byte-shape identical for the downstream builder).
 # =============================================================================
 def parse_dt(date_str: str, time_str: str) -> str | None:
     if not date_str or not time_str:
@@ -747,7 +747,7 @@ def classify_talk_color(talk_title: str, session_title: str,
 
 
 # =============================================================================
-# Source-agnostic emission helpers (identical shapes to CLEO's processor).
+# Source-agnostic emission helpers (identical shapes to a real conference's processor).
 # =============================================================================
 def _structured_authors(affil_map: str) -> list[dict]:
     authors: list[dict] = []
@@ -809,8 +809,8 @@ def _shorten_inst_body(body: str) -> str:
     """A cheap 'cleaner variant' for an institution body: the first comma-field
     that looks like an institution (contains 'Univ'/'Institute'/'Laborator'/…),
     else the longest comma-field. Only used to populate alt_names so the
-    downstream affiliation map has a hint, mirroring how CLEO passes the CSV's
-    cleaner institution strings."""
+    downstream affiliation map has a hint, mirroring how a real conference passes
+    the CSV's cleaner institution strings."""
     fields = [f.strip() for f in body.split(",") if f.strip()]
     if not fields:
         return ""
@@ -896,7 +896,7 @@ def build_conference_data(conference_name: str,
                 if body:
                     institution_strings.add(body)
 
-            # Build a status string the same way CLEO's tags read.
+            # Build a status string the same way a real conference's tags read.
             status_tags: list[str] = []
             if status == "Invited":
                 status_tags.append("Invited")
@@ -955,7 +955,7 @@ def build_conference_data(conference_name: str,
                 # "[Tutorial Talk]" bracket tag. The abstract pages carry only
                 # the clean title (the tag lives on the schedule line), so we
                 # re-prepend the tag for classification while STORING the clean
-                # title above (status carries the tag, exactly as CLEO does).
+                # title above (status carries the tag, exactly as a real conference does).
                 "color":         classify_talk_color(
                                      _tag_for(status) + title,
                                      sessions[code]["title"],
@@ -1012,7 +1012,7 @@ def _tag_for(status: str) -> str:
 def _schedule_title_only(raw_rest: str, status: str) -> str:
     """For a talk with no abstract page, recover a title from the schedule line.
     Withdrawn talks read 'Abstract Withdrawn' (we surface an empty title and let
-    the withdrawn flag carry the meaning, matching CLEO)."""
+    the withdrawn flag carry the meaning, matching a real conference)."""
     if status == "Withdrawn":
         return ""
     rest = raw_rest

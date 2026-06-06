@@ -23,14 +23,14 @@
 
 """process_program_hh2026.py — PROCESS ONLY.
 
-The "processor" half of the Hilton Head 2026 pipeline. It reads the single
+The "processor" half of the conference pipeline. It reads the single
 source of record — the Final Program PDF in data/ — and emits the clean,
 source-agnostic conference_data.json that build_conference_app.py consumes.
 No network, no browser; it parses the PDF entirely offline.
 
 Why a geometry / font driven parser
 ------------------------------------
-The Hilton Head program is a single-track schedule whose structure is encoded
+The program is a single-track schedule whose structure is encoded
 almost entirely in FONT and COLUMN position, not in punctuation. Every page is
 one narrow column laid out like this (described as FORMAT only — no real
 program text appears in this source per the repo's no-hardcoded-content rule):
@@ -306,7 +306,7 @@ def _all_caps(s: str) -> bool:
 def _split_numbered_insts(s: str) -> list[tuple[int, str]]:
     """Split a numbered affiliation string into [(n, body), ...].
 
-    The Hilton Head format glues the marker to the institution with no period:
+    The program format glues the marker to the institution with no period:
     "<n>Institution, COUNTRY, <n>Institution, COUNTRY, and <n>Institution,
     COUNTRY". A marker is a 1-2 digit number that sits at the string start, or
     right after a ',' (optionally followed by 'and'), or after a bare 'and',
@@ -1357,7 +1357,7 @@ def _collapse_session_tags(sessions: list[dict]) -> None:
 
 def main() -> None:
     log("=" * 72)
-    log("[config] HILTON HEAD 2026 PROCESSOR starting up.")
+    log("[config] CONFERENCE PROCESSOR starting up.")
     log(f"[config]   data dir  : {DATA_DIR}")
     log(f"[config]   input PDF : {INPUT_PDF}")
     log(f"[config]   JSON out  : {OUTPUT_JSON}")
